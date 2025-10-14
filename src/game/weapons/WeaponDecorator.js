@@ -2,7 +2,7 @@ import { Weapon } from './Weapon.js';
 
 export class WeaponDecorator extends Weapon {
   constructor(weapon) {
-    super({ cooldown: weapon.cooldown });
+    super({ cooldown: weapon.cooldown, damage: weapon.damage });
     this.weapon = weapon;
   }
 
@@ -16,5 +16,13 @@ export class WeaponDecorator extends Weapon {
 
   fire(context) {
     return this.weapon.fire(context);
+  }
+
+  get damage() {
+    return this.weapon.damage;
+  }
+
+  set damage(value) {
+    this.weapon.damage = value;
   }
 }

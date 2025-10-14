@@ -18,12 +18,18 @@ export class Tank extends Entity {
     this.arenaBounds = arenaBounds;
     this.attributes = attributes;
     this.mesh.add(this.turretMesh);
+    this.maxHealth = attributes.salute ?? 100;
+    this.currentHealth = this.maxHealth;
+    this.armor = attributes.armatura ?? 0;
+    this.boundingRadius = this.#computeBoundingRadius();
   }
 
   update(delta, inputManager) {
     this.weapon.update(delta);
-    this.movementStrategy.move(this, inputManager, delta);
-    this.turretController?.update(delta, inputManager);
+    this.movementStrategy?.move(this, inputManager, delta);
+    if (inputManager) {
+      this.turretController?.update(delta, inputManager);
+    }
 
     this.projectiles.forEach((projectile) => {
       projectile.update(delta);
@@ -39,6 +45,32 @@ export class Tank extends Entity {
 
   equipWeapon(weapon) {
     this.weapon = weapon;
+    if (this.weapon) {
+      this.weapon.cooldownTimer = 0;
+    }
+  }
+
+  reset(keepOrientation = false) {
+    this.resetHealth();
+    this.projectiles.forEach((projectile) => projectile.destroy());
+    this.projectiles.clear();
+    this.movementStrategy?.reset?.();
+    if (!keepOrientation) {
+      this.mesh.rotation.set(0, 0, 0);
+      if (this.turretMesh) {
+        this.turretMesh.rotation.set(0, 0, 0);
+        const pivot = this.turretMesh.userData?.barrelPivot;
+        if (pivot) {
+          const min = this.turretMesh.userData?.minElevation ?? -Math.PI;
+          const max = this.turretMesh.userData?.maxElevation ?? Math.PI;
+          const defaultElevation =
+            this.turretMesh.userData?.currentBarrelStyle?.defaultElevation ??
+            this.turretMesh.userData?.defaultElevation ??
+            0;
+          pivot.rotation.x = THREE.MathUtils.clamp(defaultElevation, min, max);
+        }
+      }
+    }
   }
 
   fire(scene) {
@@ -68,5 +100,41 @@ export class Tank extends Entity {
     const half = this.arenaBounds / 2;
     this.mesh.position.x = THREE.MathUtils.clamp(this.mesh.position.x, -half + 1, half - 1);
     this.mesh.position.z = THREE.MathUtils.clamp(this.mesh.position.z, -half + 1, half - 1);
+  }
+
+  resetHealth() {
+    this.currentHealth = this.maxHealth;
+  }
+
+  takeDamage(amount) {
+    if (amount <= 0) return 0;
+    const armor = this.armor ?? 0;
+    const mitigation = 100 / (100 + armor);
+    const appliedDamage = amount * mitigation;
+    this.currentHealth = Math.max(0, this.currentHealth - appliedDamage);
+    return appliedDamage;
+  }
+
+  isDestroyed() {
+    return this.currentHealth <= 0;
+  }
+
+  getCurrentSpeed() {
+    return this.movementStrategy?.getSpeed?.() ?? 0;
+  }
+
+  getBoundingRadius() {
+    return this.boundingRadius;
+  }
+
+  recalculateBounds() {
+    this.boundingRadius = this.#computeBoundingRadius();
+  }
+
+  #computeBoundingRadius() {
+    const box = new THREE.Box3().setFromObject(this.mesh);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return size.length() / 2;
   }
 }

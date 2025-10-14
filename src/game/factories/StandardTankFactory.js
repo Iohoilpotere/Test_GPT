@@ -102,6 +102,7 @@ export class StandardTankFactory extends AbstractTankFactory {
     if (tank.turretController) {
       tank.turretController.barrelPivot = tank.turretMesh.userData?.barrelPivot ?? tank.turretMesh;
     }
+    tank.recalculateBounds?.();
   }
 
   #applyWeaponStyleToTurret(turret, weaponStyle = {}) {

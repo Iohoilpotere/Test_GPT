@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4.0] - 2025-10-14
+- Limitata la portata effettiva di cannone, mitragliatrice e mortaio, parametrizzando velocità, lifetime e distanza massima dei
+  proiettili.
+- Aggiunto un carro bersaglio controllato dal gioco che esplode alla distruzione e respawna automaticamente dopo 3 secondi.
+- Introdotto un HUD contestuale con indicatori di HP e velocità del carro alleato, oltre a effetti di esplosione riutilizzabili
+  per gli impatti.
+
 ## [0.0.3.1] - 2025-10-14
 - Differenziate visivamente le armi dotando ogni cannone di una geometria e palette dedicate applicate tramite la factory del carro.
 - Aggiunto il fuoco automatico quando la barra spaziatrice resta premuta, sincronizzato con il cooldown di ciascuna arma.

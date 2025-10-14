@@ -9,9 +9,18 @@ export const WeaponPresets = {
     label: 'Cannone HE',
     description: 'Colpo esplosivo a medio rateo, bilanciato per la maggior parte degli scontri.',
     createWeapon: () =>
-      new ExplosiveShotDecorator(new CannonWeapon({ cooldown: 0.55, muzzleVelocity: 38 }), {
-        explosionRadius: 3.2
-      }),
+      new ExplosiveShotDecorator(
+        new CannonWeapon({
+          cooldown: 0.55,
+          muzzleVelocity: 38,
+          damage: 65,
+          projectileRange: 22,
+          projectileLifetime: 0.85
+        }),
+        {
+          explosionRadius: 3.2
+        }
+      ),
     turretStyle: {
       shape: 'cylinder',
       color: 0xf4a261,
@@ -31,7 +40,15 @@ export const WeaponPresets = {
     id: 'machineGun',
     label: 'Mitragliatrice Pesante',
     description: 'Fuoco rapido a bassa potenza per mantenere la pressione sugli avversari.',
-    createWeapon: () => new MachineGunWeapon({ cooldown: 0.12, muzzleVelocity: 55, burst: 1 }),
+    createWeapon: () =>
+      new MachineGunWeapon({
+        cooldown: 0.12,
+        muzzleVelocity: 55,
+        burst: 1,
+        damage: 15,
+        projectileRange: 16,
+        projectileLifetime: 0.55
+      }),
     turretStyle: {
       shape: 'dual',
       color: 0xd8d8d8,
@@ -54,7 +71,14 @@ export const WeaponPresets = {
     description: 'Granate ad arco con ampia area di effetto e potenza devastante.',
     createWeapon: () =>
       new ExplosiveShotDecorator(
-        new MortarWeapon({ cooldown: 1.4, muzzleVelocity: 26, arcHeight: 12 }),
+        new MortarWeapon({
+          cooldown: 1.4,
+          muzzleVelocity: 26,
+          arcHeight: 12,
+          damage: 95,
+          projectileRange: 28,
+          projectileLifetime: 2.6
+        }),
         { explosionRadius: 5 }
       ),
     turretStyle: {

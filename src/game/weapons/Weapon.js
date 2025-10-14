@@ -1,10 +1,11 @@
 export class Weapon {
-  constructor({ cooldown = 0.75 } = {}) {
+  constructor({ cooldown = 0.75, damage = 25 } = {}) {
     if (new.target === Weapon) {
       throw new Error('Weapon is abstract.');
     }
     this.cooldown = cooldown;
     this.cooldownTimer = 0;
+    this.damage = damage;
   }
 
   update(delta) {

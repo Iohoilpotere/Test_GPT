@@ -14,6 +14,15 @@ Un **menu di equipaggiamento** (loadout) laterale permette di cambiare istantane
 Il cambio avviene senza interrompere la sessione grazie all'Abstract Factory che ricostruisce le componenti del carro e al facto
 ry method per le armi.
 
+## Arena di addestramento dinamica
+
+- Un **carro bersaglio nemico** presiede l'arena: quando i suoi HP raggiungono lo zero esplode con un effetto particellare e t
+orna operativo dopo 3 secondi per continuare l'allenamento.
+- Tutti i proiettili hanno ora una **portata limitata** e coerente con il tipo d'arma, valorizzando il posizionamento e la scel
+ta del loadout.
+- Un **HUD contestuale** mostra in tempo reale i punti vita residui e la velocità corrente del carro controllato, facilitando il
+ bilanciamento dei preset.
+
 ## Getting Started
 
 ```bash

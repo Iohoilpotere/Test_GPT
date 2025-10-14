@@ -8,4 +8,10 @@ export class MovementStrategy {
   move(entity, inputManager, delta) {
     throw new Error('move() must be implemented.');
   }
+
+  getSpeed() {
+    return 0;
+  }
+
+  reset() {}
 }

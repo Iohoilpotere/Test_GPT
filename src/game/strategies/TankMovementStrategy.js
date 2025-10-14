@@ -16,6 +16,11 @@ export class TankMovementStrategy extends MovementStrategy {
   }
 
   move(tank, inputManager, delta) {
+    if (!inputManager) {
+      this.velocity.multiplyScalar(0.9);
+      return;
+    }
+
     const forward = FORWARD_KEYS.some((key) => inputManager.isPressed(key));
     const backward = BACKWARD_KEYS.some((key) => inputManager.isPressed(key));
     const left = LEFT_KEYS.some((key) => inputManager.isPressed(key));
@@ -44,5 +49,13 @@ export class TankMovementStrategy extends MovementStrategy {
     tank.mesh.position.addScaledVector(this.velocity, delta);
 
     tank.clampToArena();
+  }
+
+  getSpeed() {
+    return this.velocity.length();
+  }
+
+  reset() {
+    this.velocity.set(0, 0, 0);
   }
 }
