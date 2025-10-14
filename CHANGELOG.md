@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.2.2] - 2025-10-14
+- Prevent GitHub Pages workflow failures by removing the npm cache configuration that required a lock file.
+- Clarify deployment reliability improvements tied to the workflow change.
+
 ## [0.0.2.1] - 2025-10-14
 - Fix GitHub Pages deployment pipeline by configuring Pages in CI and deploying from the `work` branch as well as `main`/`master`.
 - Document updated branch support for automated deployments.
