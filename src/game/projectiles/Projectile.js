@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 
 export class Projectile {
-  constructor(mesh, velocity) {
+  constructor(mesh, velocity, { lifetime = 3, acceleration = new THREE.Vector3(0, 0, 0) } = {}) {
     this.mesh = mesh;
     this.velocity = velocity;
     this.alive = true;
-    this.lifetime = 3; // seconds
+    this.lifetime = lifetime;
+    this.acceleration = acceleration;
+    this.hasAcceleration = acceleration.lengthSq() > 0;
     this.explosionRadius = 0;
   }
 
@@ -15,6 +17,9 @@ export class Projectile {
     if (this.lifetime <= 0) {
       this.destroy();
       return;
+    }
+    if (this.hasAcceleration) {
+      this.velocity.addScaledVector(this.acceleration, delta);
     }
     this.mesh.position.addScaledVector(this.velocity, delta);
   }

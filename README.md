@@ -1,6 +1,19 @@
 # Tank Arena
 
-Tank Arena is a modular browser-based 3D tank sandbox showcasing SOLID-friendly architecture and classic design patterns. Drive your tank with **WASD**, aim with the **arrow keys**, and fire with **Space** inside a wall-bounded arena.
+Tank Arena è un sandbox 3D modulare per browser che dimostra un'architettura rispettosa dei principi SOLID e un uso consapevole
+dei design pattern classici. Guida il tuo carro con **WASD**, orienta la torretta con le **frecce** e spara con **Barra spaziatri
+ce** all'interno di un'arena delimitata da mura.
+
+## Loadout dinamico in runtime
+
+Un **menu di equipaggiamento** (loadout) laterale permette di cambiare istantaneamente il tipo di carro armato e l'arma primaria
+. Ogni opzione aggiorna in tempo reale le statistiche esposte:
+
+- **Carri**: Ricognitore, Assaltatore, Juggernaut – con valori dedicati di salute, armatura, velocità e manovrabilità.
+- **Armi**: Cannone HE, Mitragliatrice Pesante, Mortaio a Caduta – con danno, rateo di fuoco, raggio e velocità del proiettile.
+
+Il cambio avviene senza interrompere la sessione grazie all'Abstract Factory che ricostruisce le componenti del carro e al facto
+ry method per le armi.
 
 ## Getting Started
 
@@ -9,42 +22,46 @@ npm install
 npm run dev
 ```
 
-Open the provided local URL to play. Use `npm run build` to generate a production bundle with Vite.
+Apri l'URL locale indicato da Vite per giocare. Usa `npm run build` per generare il bundle di produzione.
 
 ## Architecture Highlights
 
-- **Observer + Singleton** for input propagation via `EventBus` and `InputManager`.
-- **Abstract Factory** to build configurable tank components (`StandardTankFactory`).
-- **Strategy** for interchangeable movement behaviour (`TankMovementStrategy`).
-- **Decorator**-based weapon enhancements (`ExplosiveShotDecorator`).
+- **Observer + Singleton** per l'input e gli eventi UI tramite `EventBus`, `InputManager` e `LoadoutMenu`.
+- **Abstract Factory** per assemblare le componenti del carro (`StandardTankFactory`) a partire dai preset.
+- **Strategy** per i comportamenti di movimento intercambiabili (`TankMovementStrategy`).
+- **Decorator** per gli effetti opzionali delle armi (`ExplosiveShotDecorator`).
+- **Factory Method** per istanziare le famiglie di armi tramite i preset (`WeaponPresets`).
 
-The system emphasises modularity: swap factories, strategies, and decorators to customise tanks without touching the core game loop.
+La struttura enfatizza la modularità: sostituisci preset, strategie e decoratori per ottenere varianti di gameplay senza toccar
+ e il game loop.
 
 ## GitHub Pages Deployment
 
-The repository ships with a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds the Vite application and publishes the generated `dist/` artifact to GitHub Pages. Every push to the `main`, `master`, or `work` branches triggers the pipeline:
+Il repository include una workflow GitHub Actions (`.github/workflows/deploy.yml`) che compila automaticamente l'applicazione Vi
+te e pubblica l'artefatto `dist/` su GitHub Pages. Ogni push ai branch `main`, `master` o `work` attiva la pipeline:
 
-1. Install dependencies in a clean Node.js 20 environment.
-2. Run `npm run build` to emit the static bundle.
-3. Upload and deploy the output to the GitHub Pages environment.
+1. Installazione dipendenze in un ambiente Node.js 20 pulito.
+2. Esecuzione di `npm run build` per produrre il bundle statico.
+3. Upload e deploy dell'output verso l'ambiente GitHub Pages.
 
-Thanks to the dynamic base path in `vite.config.js`, the bundle is automatically aligned to the repository name during CI, ensuring the site loads correctly from `https://<username>.github.io/<repository>/`.
+Grazie al path base dinamico in `vite.config.js`, il sito si allinea automaticamente al nome del repository durante la CI, garan
+ t endo il caricamento corretto da `https://<username>.github.io/<repository>/`.
 
-### Enabling GitHub Pages for the repository
+### Abilitare GitHub Pages
 
-1. Navigate to **Settings → Pages** inside your GitHub repository.
-2. Select **GitHub Actions** as the source and save.
-3. Push to `main`, `master`, or `work` (or dispatch the workflow manually) to let the automation publish the latest build.
-4. Copy the URL reported in the workflow’s **Deploy to GitHub Pages** step and share it so others can try the arena directly from the browser.
+1. Vai su **Settings → Pages** del repository GitHub.
+2. Seleziona **GitHub Actions** come sorgente e salva.
+3. Esegui un push su `main`, `master` o `work` (o avvia manualmente il workflow) per pubblicare l'ultima build.
+4. Copia l'URL mostrato nello step **Deploy to GitHub Pages** per condividere il gioco direttamente da browser.
 
-## Local Production Preview
+## Anteprima di produzione locale
 
-To simulate the GitHub Pages build locally:
+Per simulare la build GitHub Pages in locale:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-`npm run preview` serves the optimised build with the same base path logic used in production, letting you validate asset loading
- before pushing changes.
+`npm run preview` espone il build ottimizzato con la stessa logica di base path usata in produzione, così da validare il caricam
+ento delle risorse prima del push.

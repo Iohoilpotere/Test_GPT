@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.3.0] - 2025-10-14
+- Added a runtime loadout menu with Observer-driven events so players can swap tank hulls and weapons without restarting the mat
+ch.
+- Introduced three tank preset families (Ricognitore, Assaltatore, Juggernaut) with dedicated stats and movement tuning via the
+ Abstract Factory.
+- Delivered three distinct primary weapons (cannone HE, mitragliatrice pesante, mortaio) including arcing projectiles and Decor
+ator-powered area effects.
+- Refreshed the HUD, styling, and documentation to illustrate the new equipment system.
+
 ## [0.0.2.3] - 2025-10-14
 - Align turret model orientation with the hull so the cannon sits level on the chassis.
 - Ensure projectiles follow the turret's world rotation, keeping shots consistent with the cannon direction.

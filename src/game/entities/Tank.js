@@ -7,7 +7,8 @@ export class Tank extends Entity {
     turretMesh,
     weapon,
     movementStrategy,
-    arenaBounds
+    arenaBounds,
+    attributes = {}
   }) {
     super(hullMesh);
     this.turretMesh = turretMesh;
@@ -15,6 +16,7 @@ export class Tank extends Entity {
     this.movementStrategy = movementStrategy;
     this.projectiles = new Set();
     this.arenaBounds = arenaBounds;
+    this.attributes = attributes;
     this.mesh.add(this.turretMesh);
   }
 
@@ -33,6 +35,10 @@ export class Tank extends Entity {
 
   attachTurretController(controller) {
     this.turretController = controller;
+  }
+
+  equipWeapon(weapon) {
+    this.weapon = weapon;
   }
 
   fire(scene) {
