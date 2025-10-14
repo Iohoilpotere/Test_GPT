@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.7.0] - 2025-10-14
+- Introdotta una fisica semplificata con gravità e campionamento del terreno così i carri seguono rampe e dislivelli della mappa.
+- Ristretti gli ingombri di collisione a box axis-aligned, migliorando gli urti tra carri e i rilevamenti dei proiettili.
+- Aggiunta una rampa nell'arena per testare la nuova fisica e sincronizzati i tank spawn con l'aderenza al terreno.
+
 ## [0.0.6.2] - 2025-10-14
 - Corretto il posizionamento dei floating combat text aggiornando la proiezione world → screen con le matrici della camera e gli offset del canvas.
 - Allineati gli overlay dei danni con coordinate assolute per mostrare i numeri esattamente sul punto d'impatto.

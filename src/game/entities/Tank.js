@@ -23,9 +23,17 @@ export class Tank extends Entity {
     this.maxHealth = attributes.salute ?? 100;
     this.currentHealth = this.maxHealth;
     this.armor = attributes.armatura ?? 0;
-    this.boundingRadius = this.#computeBoundingRadius();
+    this.localBoundingBox = new THREE.Box3();
+    this.worldBoundingBox = new THREE.Box3();
+    this.boundingRadius = 1;
+    this.footprintHalfSize = new THREE.Vector2(1, 1);
     this.highlightController = null;
     this.statusManager = null;
+    this.terrainSampler = null;
+    this.verticalVelocity = 0;
+    this.gravity = -30;
+    this.isGrounded = false;
+    this.#recalculateBoundsInternal();
     this.setHighlightController(highlightController ?? null);
   }
 
@@ -35,6 +43,8 @@ export class Tank extends Entity {
     if (inputManager) {
       this.turretController?.update(delta, inputManager);
     }
+
+    this.#applyGravity(delta);
 
     this.statusManager?.update(delta);
     this.highlightController?.update(delta);
@@ -92,6 +102,9 @@ export class Tank extends Entity {
         }
       }
     }
+    if (this.terrainSampler) {
+      this.snapToGround();
+    }
   }
 
   fire(scene) {
@@ -120,7 +133,7 @@ export class Tank extends Entity {
 
   clampToArena() {
     const half = this.arenaBounds / 2;
-    const padding = Math.max(0.5, this.boundingRadius);
+    const padding = Math.max(0.5, Math.max(this.footprintHalfSize.x, this.footprintHalfSize.y));
     this.mesh.position.x = THREE.MathUtils.clamp(this.mesh.position.x, -half + padding, half - padding);
     this.mesh.position.z = THREE.MathUtils.clamp(this.mesh.position.z, -half + padding, half - padding);
   }
@@ -160,8 +173,14 @@ export class Tank extends Entity {
     return this.boundingRadius;
   }
 
+  getBoundingBox(target = this.worldBoundingBox) {
+    this.mesh.updateMatrixWorld(true);
+    target.copy(this.localBoundingBox).applyMatrix4(this.mesh.matrixWorld);
+    return target;
+  }
+
   recalculateBounds() {
-    this.boundingRadius = this.#computeBoundingRadius();
+    this.#recalculateBoundsInternal();
   }
 
   heal(amount) {
@@ -184,31 +203,80 @@ export class Tank extends Entity {
     this.statusManager = new TankStatusManager({ tank: this, highlight: this.highlightController });
   }
 
-  #computeBoundingRadius() {
-    const aggregate = new THREE.Box3();
-    const temp = new THREE.Box3();
-    let initialized = false;
+  setTerrainSampler(sampler) {
+    this.terrainSampler = sampler;
+    this.snapToGround();
+  }
 
-    for (const child of this.mesh.children) {
-      if (child === this.turretMesh) {
-        continue;
-      }
-      temp.setFromObject(child);
-      if (!initialized) {
-        aggregate.copy(temp);
-        initialized = true;
-      } else {
-        aggregate.union(temp);
-      }
+  snapToGround() {
+    if (!this.terrainSampler) {
+      return;
+    }
+    const sample = this.terrainSampler.sample(this.mesh.position);
+    this.mesh.position.y = sample.height;
+    this.verticalVelocity = 0;
+    this.isGrounded = true;
+  }
+
+  #applyGravity(delta) {
+    if (!this.terrainSampler) {
+      return;
     }
 
-    if (!initialized) {
+    const sample = this.terrainSampler.sample(this.mesh.position);
+    const targetHeight = sample.height;
+    const epsilon = 0.02;
+    const position = this.mesh.position;
+
+    if (position.y <= targetHeight + epsilon && this.verticalVelocity <= 0) {
+      position.y = targetHeight;
+      this.verticalVelocity = 0;
+      this.isGrounded = true;
+      return;
+    }
+
+    this.verticalVelocity += this.gravity * delta;
+    position.y += this.verticalVelocity * delta;
+
+    if (position.y <= targetHeight) {
+      position.y = targetHeight;
+      this.verticalVelocity = 0;
+      this.isGrounded = true;
+    } else {
+      this.isGrounded = false;
+    }
+  }
+
+  #recalculateBoundsInternal() {
+    const aggregate = new THREE.Box3();
+    aggregate.makeEmpty();
+    const temp = new THREE.Box3();
+    const inverse = new THREE.Matrix4();
+
+    this.mesh.updateMatrixWorld(true);
+    inverse.copy(this.mesh.matrixWorld).invert();
+
+    const relevantChildren = this.mesh.children.filter((child) => child !== this.turretMesh);
+    if (relevantChildren.length === 0) {
+      relevantChildren.push(this.mesh);
+    }
+
+    for (const child of relevantChildren) {
+      child.updateMatrixWorld(true);
+      temp.setFromObject(child);
+      temp.applyMatrix4(inverse);
+      aggregate.union(temp);
+    }
+
+    if (aggregate.isEmpty()) {
       aggregate.setFromObject(this.mesh);
     }
 
+    this.localBoundingBox.copy(aggregate);
+
     const size = new THREE.Vector3();
-    aggregate.getSize(size);
-    const footprintRadius = Math.sqrt(size.x * size.x + size.z * size.z) / 2;
-    return footprintRadius * 0.95;
+    this.localBoundingBox.getSize(size);
+    this.boundingRadius = Math.sqrt(size.x * size.x + size.z * size.z) * 0.5;
+    this.footprintHalfSize.set(Math.max(size.x / 2, 0.5), Math.max(size.z / 2, 0.5));
   }
 }

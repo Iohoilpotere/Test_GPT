@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 
 export class ArenaBuilder {
-  constructor({ size = 40, wallHeight = 4, floorColor = 0x1a1a1a } = {}) {
+  constructor({
+    size = 40,
+    wallHeight = 4,
+    floorColor = 0x1a1a1a,
+    rampColor = 0x5a5a5a
+  } = {}) {
     this.size = size;
     this.wallHeight = wallHeight;
     this.floorColor = floorColor;
+    this.rampColor = rampColor;
   }
 
   build(scene) {
@@ -47,6 +53,22 @@ export class ArenaBuilder {
       walls.push(wall);
     });
 
+    const rampAngle = THREE.MathUtils.degToRad(24);
+    const rampLength = 10;
+    const rampWidth = 6;
+    const rampMaterial = new THREE.MeshStandardMaterial({
+      color: this.rampColor,
+      side: THREE.DoubleSide
+    });
+    const ramp = new THREE.Mesh(new THREE.PlaneGeometry(rampWidth, rampLength), rampMaterial);
+    ramp.rotation.x = -Math.PI / 2 + rampAngle;
+    const halfLength = rampLength / 2;
+    const verticalOffset = Math.sin(rampAngle) * halfLength;
+    ramp.position.set(-half + rampWidth / 1.8, verticalOffset, half - halfLength - 2);
+    ramp.castShadow = true;
+    ramp.receiveShadow = true;
+    scene.add(ramp);
+
     const ambient = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambient);
 
@@ -59,6 +81,6 @@ export class ArenaBuilder {
     directional.shadow.camera.bottom = -this.size;
     scene.add(directional);
 
-    return { floor, walls };
+    return { floor, walls, ramps: [ramp] };
   }
 }

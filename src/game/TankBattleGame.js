@@ -15,6 +15,7 @@ import { ExplosionEffect } from './effects/ExplosionEffect.js';
 import { FloatingCombatTextManager } from './ui/FloatingCombatTextManager.js';
 import { PowerUpManager } from './powerups/PowerUpManager.js';
 import { PowerUpPresets } from './config/PowerUpPresets.js';
+import { TerrainSampler } from './physics/TerrainSampler.js';
 
 const ENEMY_TANK_PRESET = {
   id: 'enemyTarget',
@@ -65,12 +66,22 @@ export class TankBattleGame {
     this.projectiles = new Set();
     this.effects = new Set();
     this.collisionScratch = new THREE.Vector3();
+    this.playerBoxScratch = new THREE.Box3();
+    this.enemyBoxScratch = new THREE.Box3();
+    this.centerScratchA = new THREE.Vector3();
+    this.centerScratchB = new THREE.Vector3();
 
     this.arenaSize = 40;
     const arenaBuilder = new ArenaBuilder({ size: this.arenaSize });
     this.arenaElements = arenaBuilder.build(this.sceneManager.scene);
     this.floorHeight = 0;
     this.wallInnerLimit = Math.max(this.arenaSize / 2 - 0.5, 0);
+    const walkableSurfaces = [this.arenaElements.floor, ...(this.arenaElements.ramps ?? [])];
+    this.terrainSampler = new TerrainSampler({
+      surfaces: walkableSurfaces,
+      defaultHeight: this.floorHeight,
+      maxDistance: 80
+    });
 
     this.#setupCameraRig();
 
@@ -113,10 +124,12 @@ export class TankBattleGame {
       weaponPreset: WeaponPresets.cannon,
       spawnPosition: new THREE.Vector3(0, spawnHeight, -12),
       scene: this.sceneManager.scene,
-      respawnDelay: 3
+      respawnDelay: 3,
+      terrainSampler: this.terrainSampler
     });
     const tank = controller.ensureSpawned();
     this.#styleEnemyTank(tank);
+    tank?.setTerrainSampler?.(this.terrainSampler);
     return controller;
   }
 
@@ -139,6 +152,7 @@ export class TankBattleGame {
     tank.mesh.position.set(0, spawnHeight, 0);
     this.sceneManager.scene.add(tank.mesh);
     tank.reset();
+    tank.setTerrainSampler(this.terrainSampler);
     this.playerTank = tank;
 
     this.loadoutMenu.markTankSelection(this.currentLoadout.tankId);
@@ -238,9 +252,8 @@ export class TankBattleGame {
       if (this.enemyController?.isAlive()) {
         const enemyTank = this.enemyController.getTank?.();
         if (enemyTank) {
-          const enemyRadius = enemyTank.getBoundingRadius();
-          const distance = position.distanceTo(enemyTank.mesh.position);
-          if (distance <= enemyRadius + radius) {
+          const enemyBox = enemyTank.getBoundingBox(this.enemyBoxScratch);
+          if (enemyBox.distanceToPoint(position) <= radius) {
             collided = true;
             directHit = { type: 'enemy', tank: enemyTank };
           }
@@ -248,16 +261,18 @@ export class TankBattleGame {
       }
 
       if (!collided && this.playerTank && projectile.owner !== this.playerTank) {
-        const playerRadius = this.playerTank.getBoundingRadius();
-        const distance = position.distanceTo(this.playerTank.mesh.position);
-        if (distance <= playerRadius + radius) {
+        const playerBox = this.playerTank.getBoundingBox(this.playerBoxScratch);
+        if (playerBox.distanceToPoint(position) <= radius) {
           collided = true;
           directHit = { type: 'player', tank: this.playerTank };
         }
       }
 
-      if (!collided && position.y - radius <= floorHeight) {
-        collided = true;
+      if (!collided) {
+        const terrainHeight = this.terrainSampler?.sample(position)?.height ?? floorHeight;
+        if (position.y - radius <= terrainHeight) {
+          collided = true;
+        }
       }
 
       if (
@@ -453,24 +468,34 @@ export class TankBattleGame {
     if (!enemyTank) {
       return;
     }
-    const playerPosition = this.playerTank.mesh.position;
-    const enemyPosition = enemyTank.mesh.position;
-    this.collisionScratch.copy(playerPosition).sub(enemyPosition);
-    let distance = this.collisionScratch.length();
-    const minDistance = this.playerTank.getBoundingRadius() + enemyTank.getBoundingRadius();
-
-    if (distance === 0) {
-      this.collisionScratch.set(1, 0, 0);
-      distance = 0;
+    const playerBox = this.playerTank.getBoundingBox(this.playerBoxScratch);
+    const enemyBox = enemyTank.getBoundingBox(this.enemyBoxScratch);
+    if (!playerBox.intersectsBox(enemyBox)) {
+      return;
     }
 
-    if (distance < minDistance) {
-      const penetration = minDistance - distance;
-      this.collisionScratch.normalize();
-      playerPosition.addScaledVector(this.collisionScratch, penetration);
-      this.playerTank.movementStrategy?.resolveCollision?.(this.collisionScratch);
-      this.playerTank.clampToArena();
+    const overlapX = Math.min(playerBox.max.x, enemyBox.max.x) - Math.max(playerBox.min.x, enemyBox.min.x);
+    const overlapZ = Math.min(playerBox.max.z, enemyBox.max.z) - Math.max(playerBox.min.z, enemyBox.min.z);
+
+    if (overlapX <= 0 || overlapZ <= 0) {
+      return;
     }
+
+    const playerCenter = playerBox.getCenter(this.centerScratchA);
+    const enemyCenter = enemyBox.getCenter(this.centerScratchB);
+
+    if (overlapX < overlapZ) {
+      const direction = Math.sign(playerCenter.x - enemyCenter.x) || 1;
+      this.collisionScratch.set(direction, 0, 0);
+      this.playerTank.mesh.position.addScaledVector(this.collisionScratch, overlapX + 0.01);
+    } else {
+      const direction = Math.sign(playerCenter.z - enemyCenter.z) || 1;
+      this.collisionScratch.set(0, 0, direction);
+      this.playerTank.mesh.position.addScaledVector(this.collisionScratch, overlapZ + 0.01);
+    }
+
+    this.playerTank.movementStrategy?.resolveCollision?.(this.collisionScratch);
+    this.playerTank.clampToArena();
   }
 
   #spawnExplosion(position, radius = 3) {

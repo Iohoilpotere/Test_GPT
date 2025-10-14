@@ -20,9 +20,10 @@ ry method per le armi.
 - Tutti i proiettili si disintegrano **solo all'impatto** con pavimento, muri o veicoli, evitando despawn a mezz'aria; le varianti con Decorator generano esplosioni che infliggono danni d'area a tutti i bersagli nel raggio.
 - Gli impatti generano **highlight dinamici** sui carri (rossi quando subiscono danni, tematici per i power-up attivi) e un **floating combat text** che riporta a schermo il danno effettivo nel punto d'impatto.
 - Il **mortaio** opera su un arco elevato dedicato (60°–90°) con limiti dinamici di elevazione rispetto al cannone e alla mitragliatrice.
-- Collisioni fisiche tra carro giocatore e bersaglio sfruttano una hitbox aderente allo scafo, evitando sovrapposizioni innaturali durante gli ingaggi ravvicinati.
+- Collisioni fisiche tra carro giocatore e bersaglio sfruttano una hitbox box-aligned aderente allo scafo, evitando sovrapposizioni innaturali durante gli ingaggi ravvicinati.
 - Un **HUD contestuale** mostra in tempo reale i punti vita residui e la velocità corrente del carro controllato, facilitando il bilanciamento dei preset.
 - Quattro **power-up temporanei** (riparazione, potenziamento danni, turbo e scudo) si materializzano agli angoli dell'arena, durano 10 secondi e possono sovrapporsi mantenendo highlight colorati indipendenti.
+- Una rampa inclinata permette di testare la **fisica con gravità**: i carri si appoggiano al terreno, scalano pendii e si riallineano automaticamente grazie al `TerrainSampler` condiviso.
 
 ## Power-up e feedback visivo
 
@@ -47,6 +48,7 @@ Apri l'URL locale indicato da Vite per giocare. Usa `npm run build` per generare
 - **Decorator** per gli effetti opzionali delle armi (`ExplosiveShotDecorator`, `DamageBoostWeaponDecorator`), per il movimento (`SpeedBoostMovementDecorator`) e per l'evidenziazione (`MeshHighlightDecorator`).
 - **Factory Method** per istanziare le famiglie di armi tramite i preset (`WeaponPresets`).
 - **Manager contestuale** `TankStatusManager` orchestra i power-up attivi e convoglia modifiche a danni/rigenerazioni.
+- **Utility di fisica** `TerrainSampler` calcola l'altezza del terreno/rampa via raycast, mantenendo i carri aderenti al suolo con gravità costante.
 
 La struttura enfatizza la modularità: sostituisci preset, strategie e decoratori per ottenere varianti di gameplay senza toccar
  e il game loop.

@@ -7,7 +7,8 @@ export class EnemyTankController {
     weaponPreset,
     spawnPosition = new THREE.Vector3(0, 0, -10),
     scene,
-    respawnDelay = 3
+    respawnDelay = 3,
+    terrainSampler
   }) {
     this.factory = factory;
     this.preset = preset;
@@ -18,6 +19,7 @@ export class EnemyTankController {
     }
     this.scene = scene;
     this.respawnDelay = respawnDelay;
+    this.terrainSampler = terrainSampler;
 
     this.tank = null;
     this.alive = false;
@@ -42,6 +44,9 @@ export class EnemyTankController {
     tank.mesh.rotation.y = Math.PI;
     tank.recalculateBounds();
     tank.resetHealth();
+    if (this.terrainSampler) {
+      tank.setTerrainSampler(this.terrainSampler);
+    }
     this.scene.add(tank.mesh);
     this.tank = tank;
     this.alive = true;
