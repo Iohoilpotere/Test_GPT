@@ -30,7 +30,8 @@ export class MeshHighlightDecorator {
           }
           if (!mat.userData.__highlightOriginal) {
             mat.userData.__highlightOriginal = {
-              emissive: mat.emissive ? mat.emissive.clone() : null,
+              color: mat.color ? mat.color.clone() : new THREE.Color(0xffffff),
+              emissive: mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000),
               emissiveIntensity: mat.emissiveIntensity ?? 1
             };
           }
@@ -113,15 +114,31 @@ export class MeshHighlightDecorator {
   }
 
   #applyColor(color, intensity) {
+    const blend = THREE.MathUtils.clamp(intensity / 2.5, 0, 1);
+    const colorBlend = 0.35 + blend * 0.35;
+    const emissiveBlend = 0.25 + blend * 0.45;
+
     for (const mesh of this.meshes) {
       const materialArray = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       materialArray.forEach((mat) => {
         if (!mat) return;
+        const original = mat.userData?.__highlightOriginal;
+        if (!original) return;
+
+        if (!mat.color) {
+          mat.color = original.color.clone();
+        }
+        this.tempColor.copy(original.color).lerp(color, colorBlend);
+        mat.color.copy(this.tempColor);
+
         if (!mat.emissive) {
           mat.emissive = new THREE.Color(0x000000);
         }
-        mat.emissive.copy(color);
-        mat.emissiveIntensity = intensity;
+        this.tempColor.copy(original.emissive ?? new THREE.Color(0x000000)).lerp(color, emissiveBlend);
+        mat.emissive.copy(this.tempColor);
+        const baseIntensity = typeof original.emissiveIntensity === 'number' ? original.emissiveIntensity : 1;
+        mat.emissiveIntensity = THREE.MathUtils.lerp(baseIntensity, 1.4, emissiveBlend);
+        mat.needsUpdate = true;
       });
     }
   }
@@ -138,6 +155,10 @@ export class MeshHighlightDecorator {
         if (typeof original?.emissiveIntensity === 'number') {
           mat.emissiveIntensity = original.emissiveIntensity;
         }
+        if (original?.color && mat.color) {
+          mat.color.copy(original.color);
+        }
+        mat.needsUpdate = true;
       });
     }
   }

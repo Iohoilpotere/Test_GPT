@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.6.1] - 2025-10-14
+- Resi i floating combat text resilienti al caricamento del DOM e visibili anche con danni ridotti, formattando i valori decimali quando necessario.
+- Ammorbiditi gli highlight emissivi tramite `MeshHighlightDecorator`, mantenendo i colori originali delle mesh e sovrapponendo bagliori più semitrasparenti.
+
 ## [0.0.6.0] - 2025-10-14
 - Introdotto un sistema di highlight emissivi sui carri tramite `MeshHighlightDecorator`, con lampeggio rosso al danno e overlay compatibili con i power-up attivi.
 - Aggiunto il `FloatingCombatTextManager` che proietta numeri di danno sul punto d'impatto sfruttando la proiezione world → screen.
