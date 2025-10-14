@@ -12,6 +12,9 @@ import { UIEvents } from './ui/UIEvents.js';
 import { EnemyTankController } from './enemies/EnemyTankController.js';
 import { HudOverlay } from './ui/HudOverlay.js';
 import { ExplosionEffect } from './effects/ExplosionEffect.js';
+import { FloatingCombatTextManager } from './ui/FloatingCombatTextManager.js';
+import { PowerUpManager } from './powerups/PowerUpManager.js';
+import { PowerUpPresets } from './config/PowerUpPresets.js';
 
 const ENEMY_TANK_PRESET = {
   id: 'enemyTarget',
@@ -74,6 +77,7 @@ export class TankBattleGame {
     this.factory = new StandardTankFactory({ arenaBounds: this.arenaSize });
     this.currentLoadout = { tankId: 'assault', weaponId: 'cannon' };
     this.hud = new HudOverlay();
+    this.combatText = new FloatingCombatTextManager();
     this.loadoutMenu = new LoadoutMenu({
       tankPresets: TankPresets,
       weaponPresets: WeaponPresets,
@@ -82,6 +86,12 @@ export class TankBattleGame {
     });
 
     this.enemyController = this.#createEnemyController();
+    this.powerUpManager = new PowerUpManager({
+      scene: this.sceneManager.scene,
+      presets: PowerUpPresets,
+      arenaSize: this.arenaSize,
+      onPickup: (payload) => this.#handlePowerUpPickup(payload)
+    });
     this.#respawnTank();
     this.#subscribeToLoop();
     this.#bindLoadoutEvents();
@@ -145,12 +155,34 @@ export class TankBattleGame {
 
     this.effects.forEach((effect) => effect.dispose());
     this.effects.clear();
+    this.combatText?.clear();
 
     if (tank) {
       tank.projectiles.forEach((projectile) => {
         projectile.destroy();
       });
       tank.projectiles.clear();
+    }
+  }
+
+  #handlePowerUpPickup({ preset, effect, position } = {}) {
+    if (!this.playerTank) {
+      return;
+    }
+    const manager = this.playerTank.getStatusManager?.();
+    if (manager && effect) {
+      manager.addEffect(effect);
+    }
+
+    if (position) {
+      const effectColor = preset?.color ?? 0xffffff;
+      const burst = new ExplosionEffect(position.clone(), {
+        duration: 0.6,
+        maxScale: 2.2,
+        color: effectColor
+      });
+      burst.addToScene(this.sceneManager.scene);
+      this.effects.add(burst);
     }
   }
 
@@ -178,8 +210,10 @@ export class TankBattleGame {
         this.enemyController?.update(delta, {
           onRespawn: (tank) => this.#styleEnemyTank(tank)
         });
+        this.powerUpManager?.update(delta, { playerTank: this.playerTank });
         this.#handleProjectileCollisions();
         this.#updateEffects(delta);
+        this.combatText.update(this.sceneManager.camera, delta);
         this.#updateHud();
         this.sceneManager.render();
       }
@@ -247,7 +281,7 @@ export class TankBattleGame {
       this.#spawnExplosion(position, Math.max(2.2, explosionRadius * 1.4 || 2.2));
       this.#applyAreaDamage(position, explosionRadius, damage, projectile.owner);
     } else if (directHit && damage > 0) {
-      this.#applyDirectDamage(directHit, damage, explosionRadius);
+      this.#applyDirectDamage(directHit, damage, explosionRadius, position);
     }
 
     if (directHit && explosionRadius === 0 && damage <= 0) {
@@ -259,19 +293,39 @@ export class TankBattleGame {
     this.#removeProjectile(projectile);
   }
 
-  #applyDirectDamage(targetDescriptor, damage, explosionRadius = 0) {
+  #applyDirectDamage(targetDescriptor, damage, explosionRadius = 0, impactPosition) {
     if (!targetDescriptor?.type || damage <= 0) {
       return;
     }
 
     if (targetDescriptor.type === 'enemy' && this.enemyController?.isAlive()) {
-      this.enemyController.takeDamage(damage, {
+      const enemyTank = this.enemyController.getTank?.();
+      if (!enemyTank) {
+        return;
+      }
+      const applied = this.enemyController.takeDamage(damage, {
         onDeath: (deathPosition) => {
           this.#spawnExplosion(deathPosition, Math.max(4, explosionRadius * 2 || 4));
         }
       });
+      if (applied > 0) {
+        this.#emitDamageNumber({
+          tank: enemyTank,
+          amount: applied,
+          position: impactPosition ?? enemyTank.mesh.position.clone(),
+          type: 'enemy'
+        });
+      }
     } else if (targetDescriptor.type === 'player' && targetDescriptor.tank) {
-      targetDescriptor.tank.takeDamage(damage);
+      const applied = targetDescriptor.tank.takeDamage(damage);
+      if (applied > 0) {
+        this.#emitDamageNumber({
+          tank: targetDescriptor.tank,
+          amount: applied,
+          position: impactPosition ?? targetDescriptor.tank.mesh.position.clone(),
+          type: 'player'
+        });
+      }
     }
   }
 
@@ -283,23 +337,84 @@ export class TankBattleGame {
     if (this.enemyController?.isAlive()) {
       const enemyTank = this.enemyController.getTank?.();
       if (enemyTank) {
-        const reach = enemyTank.getBoundingRadius() + radius;
-        if (enemyTank.mesh.position.distanceTo(center) <= reach) {
-          this.enemyController.takeDamage(damage, {
-            onDeath: (position) => {
-              this.#spawnExplosion(position, Math.max(4, radius * 2 || 4));
-            }
-          });
-        }
+        this.#applyAreaDamageToTank(enemyTank, {
+          center,
+          radius,
+          baseDamage: damage,
+          type: 'enemy',
+          onDeath: (position) => {
+            this.#spawnExplosion(position, Math.max(4, radius * 2 || 4));
+          }
+        });
       }
     }
 
     if (this.playerTank && sourceTank !== this.playerTank) {
-      const reach = this.playerTank.getBoundingRadius() + radius;
-      if (this.playerTank.mesh.position.distanceTo(center) <= reach) {
-        this.playerTank.takeDamage(damage);
-      }
+      this.#applyAreaDamageToTank(this.playerTank, {
+        center,
+        radius,
+        baseDamage: damage,
+        type: 'player'
+      });
     }
+  }
+
+  #applyAreaDamageToTank(tank, { center, radius, baseDamage, type, onDeath } = {}) {
+    if (!tank) {
+      return 0;
+    }
+    const tankRadius = tank.getBoundingRadius?.() ?? 1;
+    const distance = center.distanceTo(tank.mesh.position);
+    const effectiveDistance = Math.max(0, distance - tankRadius);
+    if (effectiveDistance > radius) {
+      return 0;
+    }
+    const multiplier = this.#calculateAreaFalloff(radius, effectiveDistance);
+    const amount = baseDamage * multiplier;
+    if (amount <= 0) {
+      return 0;
+    }
+    let applied = 0;
+    if (type === 'enemy') {
+      applied = this.enemyController.takeDamage(amount, { onDeath });
+    } else {
+      applied = tank.takeDamage(amount);
+    }
+    if (applied > 0) {
+      const impactPosition = this.#computeImpactPoint(center, tank);
+      this.#emitDamageNumber({ tank, amount: applied, position: impactPosition, type });
+    }
+    return applied;
+  }
+
+  #calculateAreaFalloff(radius, distance) {
+    if (radius <= 0) {
+      return 0;
+    }
+    const ratio = THREE.MathUtils.clamp(distance / radius, 0, 1);
+    const multiplier = 1 - 0.75 * ratio;
+    return THREE.MathUtils.clamp(multiplier, 0.25, 1);
+  }
+
+  #computeImpactPoint(center, tank) {
+    const targetPosition = tank.mesh.position.clone();
+    const direction = targetPosition.clone().sub(center);
+    if (direction.lengthSq() === 0) {
+      direction.set(0, 1, 0);
+    } else {
+      direction.normalize();
+    }
+    const radius = tank.getBoundingRadius?.() ?? 1;
+    return targetPosition.clone().sub(direction.multiplyScalar(radius * 0.6));
+  }
+
+  #emitDamageNumber({ tank, amount, position, type }) {
+    if (!tank || amount <= 0) {
+      return;
+    }
+    const anchor = position ? position.clone() : tank.mesh.position.clone();
+    const color = type === 'player' ? '#ff6b6b' : '#ffe066';
+    this.combatText.spawnText({ amount, position: anchor, color });
   }
 
   #removeProjectile(projectile) {

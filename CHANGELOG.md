@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.6.0] - 2025-10-14
+- Introdotto un sistema di highlight emissivi sui carri tramite `MeshHighlightDecorator`, con lampeggio rosso al danno e overlay compatibili con i power-up attivi.
+- Aggiunto il `FloatingCombatTextManager` che proietta numeri di danno sul punto d'impatto sfruttando la proiezione world → screen.
+- Inseriti quattro power-up temporanei (riparazione, potenziamento danni, turbo, scudo) gestiti da `PowerUpManager` e `TankStatusManager` con Decorator dedicati per armi e movimento.
+- Applicata una caduta lineare (100%→25%) ai danni ad area in base alla distanza dal centro dell'esplosione, mantenendo l'eliminazione dei proiettili su impatto.
+
 ## [0.0.5.1] - 2025-10-14
 - Rimossi lifetime e distanza massima dai proiettili: ora si disintegrano solo su impatto con terreno, muri o veicoli e propagano eventuali esplosioni d'area.
 - Gestito il danno ad area tramite Decorator applicando le esplosioni a tutti i bersagli entro raggio, con feedback visivi coerenti.

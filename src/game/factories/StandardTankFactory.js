@@ -3,6 +3,7 @@ import { AbstractTankFactory } from './AbstractTankFactory.js';
 import { Tank } from '../entities/Tank.js';
 import { TankMovementStrategy } from '../strategies/TankMovementStrategy.js';
 import { TurretController } from '../entities/TurretController.js';
+import { MeshHighlightDecorator } from '../effects/MeshHighlightDecorator.js';
 
 const DEFAULT_HULL_COLOR = 0x2a9d8f;
 const DEFAULT_TRACK_COLOR = 0x1b4332;
@@ -267,7 +268,8 @@ export class StandardTankFactory extends AbstractTankFactory {
         ...stats,
         label,
         description
-      }
+      },
+      highlightController: null
     });
 
     const turretController = new TurretController(turret, {
@@ -279,6 +281,9 @@ export class StandardTankFactory extends AbstractTankFactory {
     tank.attachTurretController(turretController);
 
     this.applyWeaponStyle(tank, weaponPreset);
+
+    const highlight = new MeshHighlightDecorator(tank.mesh);
+    tank.setHighlightController(highlight);
 
     return tank;
   }

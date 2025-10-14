@@ -16,16 +16,19 @@ ry method per le armi.
 
 ## Arena di addestramento dinamica
 
-- Un **carro bersaglio nemico** presiede l'arena: quando i suoi HP raggiungono lo zero esplode con un effetto particellare e t
-orna operativo dopo 3 secondi per continuare l'allenamento.
-- Tutti i proiettili si disintegrano **solo all'impatto** con pavimento, muri o veicoli, evitando despawn a mezz'aria; le varianti
-  con Decorator generano esplosioni che infliggono danni d'area a tutti i bersagli nel raggio.
-- Il **mortaio** opera su un arco elevato dedicato (60°–90°) con limiti dinamici di elevazione rispetto al cannone e alla
-  mitragliatrice.
-- Collisioni fisiche tra carro giocatore e bersaglio sfruttano una hitbox aderente allo scafo, evitando sovrapposizioni innatural
-  durante gli ingaggi ravvicinati.
-- Un **HUD contestuale** mostra in tempo reale i punti vita residui e la velocità corrente del carro controllato, facilitando il
- bilanciamento dei preset.
+- Un **carro bersaglio nemico** presiede l'arena: quando i suoi HP raggiungono lo zero esplode con un effetto particellare e torna operativo dopo 3 secondi per continuare l'allenamento.
+- Tutti i proiettili si disintegrano **solo all'impatto** con pavimento, muri o veicoli, evitando despawn a mezz'aria; le varianti con Decorator generano esplosioni che infliggono danni d'area a tutti i bersagli nel raggio.
+- Gli impatti generano **highlight dinamici** sui carri (rossi quando subiscono danni, tematici per i power-up attivi) e un **floating combat text** che riporta a schermo il danno effettivo nel punto d'impatto.
+- Il **mortaio** opera su un arco elevato dedicato (60°–90°) con limiti dinamici di elevazione rispetto al cannone e alla mitragliatrice.
+- Collisioni fisiche tra carro giocatore e bersaglio sfruttano una hitbox aderente allo scafo, evitando sovrapposizioni innaturali durante gli ingaggi ravvicinati.
+- Un **HUD contestuale** mostra in tempo reale i punti vita residui e la velocità corrente del carro controllato, facilitando il bilanciamento dei preset.
+- Quattro **power-up temporanei** (riparazione, potenziamento danni, turbo e scudo) si materializzano agli angoli dell'arena, durano 10 secondi e possono sovrapporsi mantenendo highlight colorati indipendenti.
+
+## Power-up e feedback visivo
+
+- `PowerUpManager` gestisce lo spawn ciclico dei pickup e delega a `TankStatusManager` l'attivazione degli effetti temporanei.
+- Ogni effetto sfrutta Decorator specifici: `DamageBoostWeaponDecorator` moltiplica i danni senza toccare l'arma base, `SpeedBoostMovementDecorator` estende la Strategy di movimento e gli scudi agiscono come modificatori runtime.
+- `MeshHighlightDecorator` avvolge lo scafo del carro aggiungendo highlight emissivi sovrapponibili, mentre `FloatingCombatTextManager` converte le coordinate mondo → schermo per visualizzare i danni in overlay.
 
 ## Getting Started
 
@@ -41,8 +44,9 @@ Apri l'URL locale indicato da Vite per giocare. Usa `npm run build` per generare
 - **Observer + Singleton** per l'input e gli eventi UI tramite `EventBus`, `InputManager` e `LoadoutMenu`.
 - **Abstract Factory** per assemblare le componenti del carro (`StandardTankFactory`) a partire dai preset.
 - **Strategy** per i comportamenti di movimento intercambiabili (`TankMovementStrategy`).
-- **Decorator** per gli effetti opzionali delle armi (`ExplosiveShotDecorator`).
+- **Decorator** per gli effetti opzionali delle armi (`ExplosiveShotDecorator`, `DamageBoostWeaponDecorator`), per il movimento (`SpeedBoostMovementDecorator`) e per l'evidenziazione (`MeshHighlightDecorator`).
 - **Factory Method** per istanziare le famiglie di armi tramite i preset (`WeaponPresets`).
+- **Manager contestuale** `TankStatusManager` orchestra i power-up attivi e convoglia modifiche a danni/rigenerazioni.
 
 La struttura enfatizza la modularità: sostituisci preset, strategie e decoratori per ottenere varianti di gameplay senza toccar
  e il game loop.

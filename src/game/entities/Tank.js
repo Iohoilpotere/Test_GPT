@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Entity } from '../../core/entities/Entity.js';
+import { TankStatusManager } from '../status/TankStatusManager.js';
 
 export class Tank extends Entity {
   constructor({
@@ -8,7 +9,8 @@ export class Tank extends Entity {
     weapon,
     movementStrategy,
     arenaBounds,
-    attributes = {}
+    attributes = {},
+    highlightController
   }) {
     super(hullMesh);
     this.turretMesh = turretMesh;
@@ -22,6 +24,9 @@ export class Tank extends Entity {
     this.currentHealth = this.maxHealth;
     this.armor = attributes.armatura ?? 0;
     this.boundingRadius = this.#computeBoundingRadius();
+    this.highlightController = null;
+    this.statusManager = null;
+    this.setHighlightController(highlightController ?? null);
   }
 
   update(delta, inputManager) {
@@ -30,6 +35,9 @@ export class Tank extends Entity {
     if (inputManager) {
       this.turretController?.update(delta, inputManager);
     }
+
+    this.statusManager?.update(delta);
+    this.highlightController?.update(delta);
 
     this.projectiles.forEach((projectile) => {
       projectile.update(delta);
@@ -50,11 +58,24 @@ export class Tank extends Entity {
     }
   }
 
+  getWeapon() {
+    return this.weapon;
+  }
+
+  setMovementStrategy(strategy) {
+    this.movementStrategy = strategy;
+  }
+
+  getMovementStrategy() {
+    return this.movementStrategy;
+  }
+
   reset(keepOrientation = false) {
     this.resetHealth();
     this.projectiles.forEach((projectile) => projectile.destroy());
     this.projectiles.clear();
     this.movementStrategy?.reset?.();
+    this.statusManager?.clearAll();
     if (!keepOrientation) {
       this.mesh.rotation.set(0, 0, 0);
       if (this.turretMesh) {
@@ -110,10 +131,20 @@ export class Tank extends Entity {
 
   takeDamage(amount) {
     if (amount <= 0) return 0;
+    const mitigatedAmount = this.statusManager?.modifyIncomingDamage(amount) ?? amount;
     const armor = this.armor ?? 0;
     const mitigation = 100 / (100 + armor);
-    const appliedDamage = amount * mitigation;
+    const appliedDamage = mitigatedAmount * mitigation;
     this.currentHealth = Math.max(0, this.currentHealth - appliedDamage);
+    if (appliedDamage > 0) {
+      this.highlightController?.applyHighlight({
+        id: 'damage',
+        color: 0xff4d6d,
+        intensity: 2,
+        duration: 0.4,
+        pulse: true
+      });
+    }
     return appliedDamage;
   }
 
@@ -131,6 +162,26 @@ export class Tank extends Entity {
 
   recalculateBounds() {
     this.boundingRadius = this.#computeBoundingRadius();
+  }
+
+  heal(amount) {
+    if (amount <= 0) return 0;
+    const before = this.currentHealth;
+    this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount);
+    return this.currentHealth - before;
+  }
+
+  getStatusManager() {
+    return this.statusManager;
+  }
+
+  getHighlightController() {
+    return this.highlightController;
+  }
+
+  setHighlightController(controller) {
+    this.highlightController = controller;
+    this.statusManager = new TankStatusManager({ tank: this, highlight: this.highlightController });
   }
 
   #computeBoundingRadius() {

@@ -51,6 +51,7 @@ export class EnemyTankController {
 
   update(delta, { onRespawn } = {}) {
     if (this.alive) {
+      this.tank?.update?.(delta);
       return;
     }
     if (this.respawnTimer > 0) {
