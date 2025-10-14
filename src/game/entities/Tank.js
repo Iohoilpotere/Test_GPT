@@ -36,11 +36,18 @@ export class Tank extends Entity {
   }
 
   fire(scene) {
-    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(
-      this.turretMesh.quaternion
-    );
+    this.turretMesh.updateWorldMatrix(true, false);
+    const worldQuaternion = new THREE.Quaternion();
+    this.turretMesh.getWorldQuaternion(worldQuaternion);
+    const direction = new THREE.Vector3(0, 0, -1)
+      .applyQuaternion(worldQuaternion)
+      .normalize();
     const muzzleWorldPos = new THREE.Vector3();
-    this.turretMesh.localToWorld(muzzleWorldPos.set(0, 0, -1.5));
+    if (this.turretMesh.userData?.muzzle) {
+      this.turretMesh.userData.muzzle.getWorldPosition(muzzleWorldPos);
+    } else {
+      this.turretMesh.localToWorld(muzzleWorldPos.set(0, 0, -1.5));
+    }
     const projectile = this.weapon.fire({ scene, origin: muzzleWorldPos, direction });
     if (projectile) {
       this.projectiles.add(projectile);

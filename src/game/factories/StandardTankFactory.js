@@ -37,24 +37,30 @@ export class StandardTankFactory extends AbstractTankFactory {
   createTurret({ color = 0xe76f51 } = {}) {
     const turret = new THREE.Group();
     const dome = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.8, 1.2, 0.7, 16),
+      new THREE.CylinderGeometry(0.8, 1.2, 0.7, 24),
       new THREE.MeshStandardMaterial({ color })
     );
-    dome.rotation.x = Math.PI / 2;
+    dome.position.y = 0.35;
     dome.castShadow = true;
     dome.receiveShadow = true;
 
     const cannon = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.15, 2.5, 12),
+      new THREE.CylinderGeometry(0.15, 0.15, 2.5, 20),
       new THREE.MeshStandardMaterial({ color: 0xf4a261 })
     );
-    cannon.rotation.z = Math.PI / 2;
+    cannon.rotation.x = -Math.PI / 2;
     cannon.position.z = -1.25;
-    cannon.position.y = 0.25;
+    cannon.position.y = 0.35;
     cannon.castShadow = true;
+
+    const muzzle = new THREE.Object3D();
+    muzzle.position.set(0, 1.25, 0);
+    cannon.add(muzzle);
 
     turret.add(dome);
     turret.add(cannon);
+
+    turret.userData.muzzle = muzzle;
 
     return turret;
   }
@@ -75,6 +81,8 @@ export class StandardTankFactory extends AbstractTankFactory {
       ? weaponOptions.decorator(this.createWeapon())
       : this.createWeapon();
     const movementStrategy = this.createMovementStrategy();
+
+    turret.position.y = turretOptions.heightOffset ?? 0.55;
 
     const tank = new Tank({
       hullMesh: hull,

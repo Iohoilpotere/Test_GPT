@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.2.3] - 2025-10-14
+- Align turret model orientation with the hull so the cannon sits level on the chassis.
+- Ensure projectiles follow the turret's world rotation, keeping shots consistent with the cannon direction.
+
 ## [0.0.2.2] - 2025-10-14
 - Prevent GitHub Pages workflow failures by removing the npm cache configuration that required a lock file.
 - Clarify deployment reliability improvements tied to the workflow change.
