@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GameLoop } from '../core/engine/GameLoop.js';
 import { SceneManager } from '../core/engine/SceneManager.js';
-import { InputManager, InputEvents } from '../core/input/InputManager.js';
+import { InputManager } from '../core/input/InputManager.js';
 import { ArenaBuilder } from './ArenaBuilder.js';
 import { StandardTankFactory } from './factories/StandardTankFactory.js';
 import { GlobalEventBus } from '../core/events/EventBus.js';
@@ -34,7 +34,6 @@ export class TankBattleGame {
 
     this.#respawnTank();
     this.#subscribeToLoop();
-    this.#bindFire();
     this.#bindLoadoutEvents();
   }
 
@@ -83,6 +82,12 @@ export class TankBattleGame {
       update: (delta) => {
         if (this.playerTank) {
           this.playerTank.update(delta, this.inputManager);
+          if (this.inputManager.isPressed('Space')) {
+            const projectile = this.playerTank.fire(this.sceneManager.scene);
+            if (projectile) {
+              this.projectiles.add(projectile);
+            }
+          }
         }
         this.projectiles.forEach((projectile) => {
           projectile.update(delta);
@@ -91,17 +96,6 @@ export class TankBattleGame {
           }
         });
         this.sceneManager.render();
-      }
-    });
-  }
-
-  #bindFire() {
-    GlobalEventBus.subscribe(InputEvents.KEY_DOWN, (code) => {
-      if (code === 'Space') {
-        const projectile = this.playerTank?.fire(this.sceneManager.scene);
-        if (projectile) {
-          this.projectiles.add(projectile);
-        }
       }
     });
   }
@@ -125,6 +119,7 @@ export class TankBattleGame {
     const weaponPreset = WeaponPresets[weaponId];
     const weapon = this.factory.createWeapon(weaponPreset);
     this.playerTank.equipWeapon(weapon);
+    this.factory.applyWeaponStyle(this.playerTank, weaponPreset);
     this.loadoutMenu.markWeaponSelection(weaponId);
   }
 

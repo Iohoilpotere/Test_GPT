@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.3.1] - 2025-10-14
+- Differenziate visivamente le armi dotando ogni cannone di una geometria e palette dedicate applicate tramite la factory del carro.
+- Aggiunto il fuoco automatico quando la barra spaziatrice resta premuta, sincronizzato con il cooldown di ciascuna arma.
+- Introdotto il controllo di elevazione della canna con le frecce su/giù, mantenendo i limiti di puntamento configurabili per preset.
+- Aggiornata la documentazione per descrivere i nuovi controlli e le varianti estetiche delle armi.
+
 ## [0.0.3.0] - 2025-10-14
 - Added a runtime loadout menu with Observer-driven events so players can swap tank hulls and weapons without restarting the mat
 ch.

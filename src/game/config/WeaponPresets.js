@@ -12,6 +12,14 @@ export const WeaponPresets = {
       new ExplosiveShotDecorator(new CannonWeapon({ cooldown: 0.55, muzzleVelocity: 38 }), {
         explosionRadius: 3.2
       }),
+    turretStyle: {
+      shape: 'cylinder',
+      color: 0xf4a261,
+      accentColor: 0x264653,
+      length: 3.2,
+      radius: 0.18,
+      defaultElevation: 0.02
+    },
     stats: {
       danno: 65,
       rateo: 1.8,
@@ -24,6 +32,15 @@ export const WeaponPresets = {
     label: 'Mitragliatrice Pesante',
     description: 'Fuoco rapido a bassa potenza per mantenere la pressione sugli avversari.',
     createWeapon: () => new MachineGunWeapon({ cooldown: 0.12, muzzleVelocity: 55, burst: 1 }),
+    turretStyle: {
+      shape: 'dual',
+      color: 0xd8d8d8,
+      accentColor: 0x4cc9f0,
+      length: 3.6,
+      radius: 0.08,
+      spacing: 0.32,
+      defaultElevation: 0
+    },
     stats: {
       danno: 15,
       rateo: 8,
@@ -40,6 +57,14 @@ export const WeaponPresets = {
         new MortarWeapon({ cooldown: 1.4, muzzleVelocity: 26, arcHeight: 12 }),
         { explosionRadius: 5 }
       ),
+    turretStyle: {
+      shape: 'mortar',
+      color: 0x8d99ae,
+      accentColor: 0xf2e9e4,
+      length: 2.6,
+      radius: 0.24,
+      defaultElevation: 0.4
+    },
     stats: {
       danno: 95,
       rateo: 0.7,

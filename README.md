@@ -1,8 +1,7 @@
 # Tank Arena
 
 Tank Arena è un sandbox 3D modulare per browser che dimostra un'architettura rispettosa dei principi SOLID e un uso consapevole
-dei design pattern classici. Guida il tuo carro con **WASD**, orienta la torretta con le **frecce** e spara con **Barra spaziatri
-ce** all'interno di un'arena delimitata da mura.
+dei design pattern classici. Guida il tuo carro con **WASD**, ruota la torretta con le **frecce sinistra/destra**, regola l'elevazione della canna con le **frecce su/giù** e tieni premuta la **Barra spaziatrice** per il fuoco automatico all'interno di un'arena delimitata da mura.
 
 ## Loadout dinamico in runtime
 
@@ -10,7 +9,7 @@ Un **menu di equipaggiamento** (loadout) laterale permette di cambiare istantane
 . Ogni opzione aggiorna in tempo reale le statistiche esposte:
 
 - **Carri**: Ricognitore, Assaltatore, Juggernaut – con valori dedicati di salute, armatura, velocità e manovrabilità.
-- **Armi**: Cannone HE, Mitragliatrice Pesante, Mortaio a Caduta – con danno, rateo di fuoco, raggio e velocità del proiettile.
+- **Armi**: Cannone HE, Mitragliatrice Pesante, Mortaio a Caduta – con danno, rateo di fuoco, raggio, velocità del proiettile e una canna dedicata con geometria/colore distinti.
 
 Il cambio avviene senza interrompere la sessione grazie all'Abstract Factory che ricostruisce le componenti del carro e al facto
 ry method per le armi.
