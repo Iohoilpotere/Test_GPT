@@ -5,7 +5,7 @@ export class Weapon {
     }
     this.cooldown = cooldown;
     this.cooldownTimer = 0;
-    this.damage = damage;
+    this._damage = damage;
   }
 
   update(delta) {
@@ -20,5 +20,13 @@ export class Weapon {
 
   fire(context) {
     throw new Error('fire() must be implemented.');
+  }
+
+  get damage() {
+    return this._damage;
+  }
+
+  set damage(value) {
+    this._damage = value;
   }
 }

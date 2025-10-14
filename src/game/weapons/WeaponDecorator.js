@@ -2,6 +2,9 @@ import { Weapon } from './Weapon.js';
 
 export class WeaponDecorator extends Weapon {
   constructor(weapon) {
+    if (!weapon) {
+      throw new Error('WeaponDecorator requires a weapon instance.');
+    }
     super({ cooldown: weapon.cooldown, damage: weapon.damage });
     this.weapon = weapon;
   }
