@@ -235,8 +235,8 @@ canvas#gameCanvas {
 
 .combat-text {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: 0;
+  top: 0;
   transform: translate(-50%, -50%);
   color: var(--combat-text-color, #ffe066);
   font-weight: 700;

@@ -67,8 +67,25 @@ export class FloatingCombatTextManager {
 
   update(camera, delta) {
     this.camera = camera;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    if (!this.root) {
+      this.#ensureRoot();
+    }
+    if (!this.root) {
+      return;
+    }
+
+    if (camera?.updateMatrixWorld) {
+      camera.updateMatrixWorld();
+    }
+    if (camera?.isPerspectiveCamera || camera?.isOrthographicCamera) {
+      camera.updateProjectionMatrix();
+    }
+
+    const rect = this.root.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const offsetX = rect.left;
+    const offsetY = rect.top;
 
     for (const entry of Array.from(this.entries)) {
       entry.elapsed += delta;
@@ -82,9 +99,11 @@ export class FloatingCombatTextManager {
       worldPos.y += entry.offset * (entry.elapsed / entry.lifespan);
       worldPos.project(camera);
 
-      const x = (worldPos.x * 0.5 + 0.5) * width;
-      const y = (-worldPos.y * 0.5 + 0.5) * height;
-      entry.element.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+      const x = offsetX + (worldPos.x * 0.5 + 0.5) * width;
+      const y = offsetY + (-worldPos.y * 0.5 + 0.5) * height;
+      entry.element.style.left = `${x}px`;
+      entry.element.style.top = `${y}px`;
+      entry.element.style.transform = 'translate(-50%, -50%)';
       entry.element.style.opacity = (1 - entry.elapsed / entry.lifespan).toFixed(2);
     }
   }
