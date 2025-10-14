@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.5.1] - 2025-10-14
+- Rimossi lifetime e distanza massima dai proiettili: ora si disintegrano solo su impatto con terreno, muri o veicoli e propagano eventuali esplosioni d'area.
+- Gestito il danno ad area tramite Decorator applicando le esplosioni a tutti i bersagli entro raggio, con feedback visivi coerenti.
+- Reimpostata la finestra di elevazione del mortaio tra 60° e 90° e allineati factory e preset alle nuove restrizioni.
+
 ## [0.0.5.0] - 2025-10-14
 - Ridotta ulteriormente la portata e la velocità effettiva dei colpi applicando accelerazioni dedicate per ogni arma.
 - Configurata la torretta del mortaio con un arco invertito (150°–180°) e limiti dinamici di elevazione rispetto alle altre armi.

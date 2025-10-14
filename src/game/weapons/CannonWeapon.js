@@ -7,15 +7,13 @@ export class CannonWeapon extends Weapon {
     cooldown = 0.6,
     muzzleVelocity = 18,
     damage = 65,
-    projectileRange = 12,
-    projectileLifetime = 0.5,
-    projectileAcceleration = new THREE.Vector3(0, -22, 0)
+    projectileAcceleration = new THREE.Vector3(0, -22, 0),
+    projectileRadius = 0.2
   } = {}) {
     super({ cooldown, damage });
     this.muzzleVelocity = muzzleVelocity;
-    this.projectileRange = projectileRange;
-    this.projectileLifetime = projectileLifetime;
     this.projectileAcceleration = projectileAcceleration.clone?.() ?? projectileAcceleration;
+    this.projectileRadius = projectileRadius;
   }
 
   fire({ scene, origin, direction }) {
@@ -29,15 +27,10 @@ export class CannonWeapon extends Weapon {
     projectileMesh.position.copy(origin);
     projectileMesh.castShadow = true;
 
-    const projectile = new Projectile(
-      projectileMesh,
-      direction.clone().multiplyScalar(this.muzzleVelocity),
-      {
-        lifetime: this.projectileLifetime,
-        maxDistance: this.projectileRange,
-        acceleration: this.projectileAcceleration?.clone?.() ?? this.projectileAcceleration
-      }
-    );
+    const projectile = new Projectile(projectileMesh, direction.clone().multiplyScalar(this.muzzleVelocity), {
+      acceleration: this.projectileAcceleration?.clone?.() ?? this.projectileAcceleration,
+      radius: this.projectileRadius
+    });
     projectile.damage = this.damage;
     scene.add(projectile.mesh);
 

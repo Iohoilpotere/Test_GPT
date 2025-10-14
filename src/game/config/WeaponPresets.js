@@ -14,9 +14,7 @@ export const WeaponPresets = {
         new CannonWeapon({
           cooldown: 0.55,
           muzzleVelocity: 18,
-          damage: 65,
-          projectileRange: 12,
-          projectileLifetime: 0.5
+          damage: 65
         }),
         {
           explosionRadius: 3.2
@@ -48,9 +46,7 @@ export const WeaponPresets = {
         cooldown: 0.12,
         muzzleVelocity: 24,
         burst: 1,
-        damage: 15,
-        projectileRange: 8,
-        projectileLifetime: 0.35
+        damage: 15
       }),
     turretStyle: {
       shape: 'dual',
@@ -80,9 +76,7 @@ export const WeaponPresets = {
           cooldown: 1.4,
           muzzleVelocity: 16,
           arcHeight: 12,
-          damage: 95,
-          projectileRange: 18,
-          projectileLifetime: 2.2
+          damage: 95
         }),
         { explosionRadius: 5 }
       ),
@@ -92,9 +86,9 @@ export const WeaponPresets = {
       accentColor: 0xf2e9e4,
       length: 2.6,
       radius: 0.24,
-      defaultElevation: THREE.MathUtils.degToRad(165),
-      minElevation: THREE.MathUtils.degToRad(150),
-      maxElevation: THREE.MathUtils.degToRad(180)
+      defaultElevation: THREE.MathUtils.degToRad(75),
+      minElevation: THREE.MathUtils.degToRad(60),
+      maxElevation: THREE.MathUtils.degToRad(90)
     },
     stats: {
       danno: 95,

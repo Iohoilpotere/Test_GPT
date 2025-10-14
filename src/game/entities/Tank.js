@@ -91,6 +91,7 @@ export class Tank extends Entity {
 
     const projectile = this.weapon.fire({ scene, origin: muzzleWorldPos, direction });
     if (projectile) {
+      projectile.owner = this;
       this.projectiles.add(projectile);
     }
     return projectile;

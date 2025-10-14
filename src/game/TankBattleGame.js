@@ -65,7 +65,9 @@ export class TankBattleGame {
 
     this.arenaSize = 40;
     const arenaBuilder = new ArenaBuilder({ size: this.arenaSize });
-    arenaBuilder.build(this.sceneManager.scene);
+    this.arenaElements = arenaBuilder.build(this.sceneManager.scene);
+    this.floorHeight = 0;
+    this.wallInnerLimit = Math.max(this.arenaSize / 2 - 0.5, 0);
 
     this.#setupCameraRig();
 
@@ -167,12 +169,12 @@ export class TankBattleGame {
           this.sceneManager.camera.lookAt(this.playerTank.mesh.position);
         }
         this.#resolveTankCollision();
-        this.projectiles.forEach((projectile) => {
+        for (const projectile of Array.from(this.projectiles)) {
           projectile.update(delta);
           if (!projectile.alive) {
-            this.projectiles.delete(projectile);
+            this.#removeProjectile(projectile);
           }
-        });
+        }
         this.enemyController?.update(delta, {
           onRespawn: (tank) => this.#styleEnemyTank(tank)
         });
@@ -185,32 +187,127 @@ export class TankBattleGame {
   }
 
   #handleProjectileCollisions() {
-    if (!this.enemyController?.isAlive()) {
+    const halfLimit = this.wallInnerLimit ?? this.arenaSize / 2;
+    const floorHeight = this.floorHeight ?? 0;
+
+    for (const projectile of Array.from(this.projectiles)) {
+      if (!projectile.alive) {
+        this.#removeProjectile(projectile);
+        continue;
+      }
+
+      const radius = projectile.getRadius?.() ?? projectile.radius ?? 0.2;
+      const position = projectile.mesh.position;
+      let directHit = null;
+      let collided = false;
+
+      if (this.enemyController?.isAlive()) {
+        const enemyTank = this.enemyController.getTank?.();
+        if (enemyTank) {
+          const enemyRadius = enemyTank.getBoundingRadius();
+          const distance = position.distanceTo(enemyTank.mesh.position);
+          if (distance <= enemyRadius + radius) {
+            collided = true;
+            directHit = { type: 'enemy', tank: enemyTank };
+          }
+        }
+      }
+
+      if (!collided && this.playerTank && projectile.owner !== this.playerTank) {
+        const playerRadius = this.playerTank.getBoundingRadius();
+        const distance = position.distanceTo(this.playerTank.mesh.position);
+        if (distance <= playerRadius + radius) {
+          collided = true;
+          directHit = { type: 'player', tank: this.playerTank };
+        }
+      }
+
+      if (!collided && position.y - radius <= floorHeight) {
+        collided = true;
+      }
+
+      if (
+        !collided &&
+        (Math.abs(position.x) >= halfLimit - radius || Math.abs(position.z) >= halfLimit - radius)
+      ) {
+        collided = true;
+      }
+
+      if (collided) {
+        this.#detonateProjectile(projectile, { position: position.clone(), directHit });
+      }
+    }
+  }
+
+  #detonateProjectile(projectile, { position, directHit } = {}) {
+    const explosionRadius = projectile.explosionRadius ?? 0;
+    const damage = projectile.damage ?? 0;
+
+    if (explosionRadius > 0) {
+      this.#spawnExplosion(position, Math.max(2.2, explosionRadius * 1.4 || 2.2));
+      this.#applyAreaDamage(position, explosionRadius, damage, projectile.owner);
+    } else if (directHit && damage > 0) {
+      this.#applyDirectDamage(directHit, damage, explosionRadius);
+    }
+
+    if (directHit && explosionRadius === 0 && damage <= 0) {
+      // ensure hit feedback even without configured damage values
+      this.#spawnExplosion(position, 1.8);
+    }
+
+    projectile.destroy();
+    this.#removeProjectile(projectile);
+  }
+
+  #applyDirectDamage(targetDescriptor, damage, explosionRadius = 0) {
+    if (!targetDescriptor?.type || damage <= 0) {
       return;
     }
-    const enemyPosition = this.enemyController.getPosition();
-    const enemyRadius = this.enemyController.getBoundingRadius() + 0.6;
 
-    this.projectiles.forEach((projectile) => {
-      if (!projectile.alive) {
-        this.projectiles.delete(projectile);
-        return;
+    if (targetDescriptor.type === 'enemy' && this.enemyController?.isAlive()) {
+      this.enemyController.takeDamage(damage, {
+        onDeath: (deathPosition) => {
+          this.#spawnExplosion(deathPosition, Math.max(4, explosionRadius * 2 || 4));
+        }
+      });
+    } else if (targetDescriptor.type === 'player' && targetDescriptor.tank) {
+      targetDescriptor.tank.takeDamage(damage);
+    }
+  }
+
+  #applyAreaDamage(center, radius, damage, sourceTank) {
+    if (damage <= 0 || radius <= 0) {
+      return;
+    }
+
+    if (this.enemyController?.isAlive()) {
+      const enemyTank = this.enemyController.getTank?.();
+      if (enemyTank) {
+        const reach = enemyTank.getBoundingRadius() + radius;
+        if (enemyTank.mesh.position.distanceTo(center) <= reach) {
+          this.enemyController.takeDamage(damage, {
+            onDeath: (position) => {
+              this.#spawnExplosion(position, Math.max(4, radius * 2 || 4));
+            }
+          });
+        }
       }
-      const explosionRadius = projectile.explosionRadius ?? 0;
-      const collisionRadius = enemyRadius + Math.max(0.5, explosionRadius);
-      if (projectile.mesh.position.distanceTo(enemyPosition) <= collisionRadius) {
-        const damage = projectile.damage ?? 25;
-        this.enemyController.takeDamage(damage, {
-          onDeath: (position) => {
-            this.#spawnExplosion(position, Math.max(4, explosionRadius * 2 || 4));
-          }
-        });
-        this.#spawnExplosion(projectile.mesh.position, Math.max(2.2, explosionRadius * 1.4 || 2.2));
-        projectile.destroy();
-        this.projectiles.delete(projectile);
-        this.playerTank?.projectiles.delete(projectile);
+    }
+
+    if (this.playerTank && sourceTank !== this.playerTank) {
+      const reach = this.playerTank.getBoundingRadius() + radius;
+      if (this.playerTank.mesh.position.distanceTo(center) <= reach) {
+        this.playerTank.takeDamage(damage);
       }
-    });
+    }
+  }
+
+  #removeProjectile(projectile) {
+    this.projectiles.delete(projectile);
+    const owner = projectile.owner;
+    if (owner?.projectiles instanceof Set) {
+      owner.projectiles.delete(projectile);
+    }
   }
 
   #updateEffects(delta) {

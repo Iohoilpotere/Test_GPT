@@ -8,16 +8,14 @@ export class MortarWeapon extends Weapon {
     muzzleVelocity = 16,
     arcHeight = 10,
     damage = 95,
-    projectileRange = 18,
-    projectileLifetime = 2.2,
-    gravity = new THREE.Vector3(0, -18, 0)
+    gravity = new THREE.Vector3(0, -18, 0),
+    projectileRadius = 0.28
   } = {}) {
     super({ cooldown, damage });
     this.muzzleVelocity = muzzleVelocity;
     this.arcHeight = arcHeight;
     this.gravity = gravity.clone?.() ?? gravity;
-    this.projectileRange = projectileRange;
-    this.projectileLifetime = projectileLifetime;
+    this.projectileRadius = projectileRadius;
   }
 
   fire({ scene, origin, direction }) {
@@ -38,9 +36,8 @@ export class MortarWeapon extends Weapon {
 
     const velocity = arcingDirection.multiplyScalar(this.muzzleVelocity);
     const projectile = new Projectile(projectileMesh, velocity, {
-      lifetime: this.projectileLifetime,
       acceleration: this.gravity?.clone?.() ?? this.gravity,
-      maxDistance: this.projectileRange
+      radius: this.projectileRadius
     });
     projectile.damage = this.damage;
     scene.add(projectile.mesh);

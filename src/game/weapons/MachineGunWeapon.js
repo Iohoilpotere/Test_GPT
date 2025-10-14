@@ -8,16 +8,14 @@ export class MachineGunWeapon extends Weapon {
     muzzleVelocity = 24,
     burst = 1,
     damage = 12,
-    projectileRange = 8,
-    projectileLifetime = 0.35,
-    projectileAcceleration = new THREE.Vector3(0, -28, 0)
+    projectileAcceleration = new THREE.Vector3(0, -28, 0),
+    projectileRadius = 0.12
   } = {}) {
     super({ cooldown, damage });
     this.muzzleVelocity = muzzleVelocity;
     this.burst = burst;
-    this.projectileLifetime = projectileLifetime;
-    this.projectileRange = projectileRange;
     this.projectileAcceleration = projectileAcceleration.clone?.() ?? projectileAcceleration;
+    this.projectileRadius = projectileRadius;
   }
 
   fire({ scene, origin, direction }) {
@@ -40,15 +38,10 @@ export class MachineGunWeapon extends Weapon {
       projectileMesh.position.copy(origin);
       projectileMesh.castShadow = true;
 
-      const projectile = new Projectile(
-        projectileMesh,
-        shotDirection.multiplyScalar(this.muzzleVelocity),
-        {
-          lifetime: this.projectileLifetime,
-          maxDistance: this.projectileRange,
-          acceleration: this.projectileAcceleration?.clone?.() ?? this.projectileAcceleration
-        }
-      );
+      const projectile = new Projectile(projectileMesh, shotDirection.multiplyScalar(this.muzzleVelocity), {
+        acceleration: this.projectileAcceleration?.clone?.() ?? this.projectileAcceleration,
+        radius: this.projectileRadius
+      });
       projectile.damage = this.damage;
       scene.add(projectile.mesh);
       lastProjectile = projectile;
