@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.2.1] - 2025-10-14
+- Fix GitHub Pages deployment pipeline by configuring Pages in CI and deploying from the `work` branch as well as `main`/`master`.
+- Document updated branch support for automated deployments.
+
 ## [0.0.2.0] - 2025-10-14
 - Added GitHub Actions workflow to build and deploy the Vite bundle to GitHub Pages.
 - Configured dynamic Vite base path for repository-aware GitHub Pages hosting.

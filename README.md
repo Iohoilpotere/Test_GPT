@@ -22,7 +22,7 @@ The system emphasises modularity: swap factories, strategies, and decorators to 
 
 ## GitHub Pages Deployment
 
-The repository ships with a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds the Vite application and publishes the generated `dist/` artifact to GitHub Pages. Every push to the `main` (or legacy `master`) branch triggers the pipeline:
+The repository ships with a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds the Vite application and publishes the generated `dist/` artifact to GitHub Pages. Every push to the `main`, `master`, or `work` branches triggers the pipeline:
 
 1. Install dependencies in a clean Node.js 20 environment.
 2. Run `npm run build` to emit the static bundle.
@@ -34,7 +34,7 @@ Thanks to the dynamic base path in `vite.config.js`, the bundle is automatically
 
 1. Navigate to **Settings → Pages** inside your GitHub repository.
 2. Select **GitHub Actions** as the source and save.
-3. Push to `main` (or dispatch the workflow manually) to let the automation publish the latest build.
+3. Push to `main`, `master`, or `work` (or dispatch the workflow manually) to let the automation publish the latest build.
 4. Copy the URL reported in the workflow’s **Deploy to GitHub Pages** step and share it so others can try the arena directly from the browser.
 
 ## Local Production Preview
