@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.5.0] - 2025-10-14
+- Ridotta ulteriormente la portata e la velocità effettiva dei colpi applicando accelerazioni dedicate per ogni arma.
+- Configurata la torretta del mortaio con un arco invertito (150°–180°) e limiti dinamici di elevazione rispetto alle altre armi.
+- Implementate collisioni tra carro giocatore e bersaglio con hitbox aderente allo scafo e riallineamento al perimetro dell'arena.
+
 ## [0.0.4.0] - 2025-10-14
 - Limitata la portata effettiva di cannone, mitragliatrice e mortaio, parametrizzando velocità, lifetime e distanza massima dei
   proiettili.

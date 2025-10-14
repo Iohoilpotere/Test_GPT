@@ -101,4 +101,8 @@ export class EnemyTankController {
   isAlive() {
     return this.alive;
   }
+
+  getTank() {
+    return this.tank;
+  }
 }

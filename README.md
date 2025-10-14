@@ -18,8 +18,12 @@ ry method per le armi.
 
 - Un **carro bersaglio nemico** presiede l'arena: quando i suoi HP raggiungono lo zero esplode con un effetto particellare e t
 orna operativo dopo 3 secondi per continuare l'allenamento.
-- Tutti i proiettili hanno ora una **portata limitata** e coerente con il tipo d'arma, valorizzando il posizionamento e la scel
-ta del loadout.
+- Tutti i proiettili hanno ora una **portata limitata** con decadimento anticipato, coerente con il tipo d'arma, valorizzando il
+  posizionamento e la scelta del loadout.
+- Il **mortaio** opera su un arco inverso dedicato (150°–180°) con limiti dinamici di elevazione rispetto al cannone e alla
+  mitragliatrice.
+- Collisioni fisiche tra carro giocatore e bersaglio sfruttano una hitbox aderente allo scafo, evitando sovrapposizioni innatural
+  durante gli ingaggi ravvicinati.
 - Un **HUD contestuale** mostra in tempo reale i punti vita residui e la velocità corrente del carro controllato, facilitando il
  bilanciamento dei preset.
 

@@ -58,4 +58,14 @@ export class TankMovementStrategy extends MovementStrategy {
   reset() {
     this.velocity.set(0, 0, 0);
   }
+
+  resolveCollision(normal) {
+    if (!normal) {
+      return;
+    }
+    const projection = normal.clone().multiplyScalar(this.velocity.dot(normal));
+    if (projection.lengthSq() > 0 && this.velocity.dot(normal) > 0) {
+      this.velocity.sub(projection);
+    }
+  }
 }

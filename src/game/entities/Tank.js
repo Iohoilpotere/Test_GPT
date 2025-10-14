@@ -98,8 +98,9 @@ export class Tank extends Entity {
 
   clampToArena() {
     const half = this.arenaBounds / 2;
-    this.mesh.position.x = THREE.MathUtils.clamp(this.mesh.position.x, -half + 1, half - 1);
-    this.mesh.position.z = THREE.MathUtils.clamp(this.mesh.position.z, -half + 1, half - 1);
+    const padding = Math.max(0.5, this.boundingRadius);
+    this.mesh.position.x = THREE.MathUtils.clamp(this.mesh.position.x, -half + padding, half - padding);
+    this.mesh.position.z = THREE.MathUtils.clamp(this.mesh.position.z, -half + padding, half - padding);
   }
 
   resetHealth() {
@@ -132,9 +133,30 @@ export class Tank extends Entity {
   }
 
   #computeBoundingRadius() {
-    const box = new THREE.Box3().setFromObject(this.mesh);
+    const aggregate = new THREE.Box3();
+    const temp = new THREE.Box3();
+    let initialized = false;
+
+    for (const child of this.mesh.children) {
+      if (child === this.turretMesh) {
+        continue;
+      }
+      temp.setFromObject(child);
+      if (!initialized) {
+        aggregate.copy(temp);
+        initialized = true;
+      } else {
+        aggregate.union(temp);
+      }
+    }
+
+    if (!initialized) {
+      aggregate.setFromObject(this.mesh);
+    }
+
     const size = new THREE.Vector3();
-    box.getSize(size);
-    return size.length() / 2;
+    aggregate.getSize(size);
+    const footprintRadius = Math.sqrt(size.x * size.x + size.z * size.z) / 2;
+    return footprintRadius * 0.95;
   }
 }

@@ -5,16 +5,17 @@ import { Projectile } from '../projectiles/Projectile.js';
 export class MortarWeapon extends Weapon {
   constructor({
     cooldown = 1.2,
-    muzzleVelocity = 24,
+    muzzleVelocity = 16,
     arcHeight = 10,
     damage = 95,
-    projectileRange = 28,
-    projectileLifetime = 3.2
+    projectileRange = 18,
+    projectileLifetime = 2.2,
+    gravity = new THREE.Vector3(0, -18, 0)
   } = {}) {
     super({ cooldown, damage });
     this.muzzleVelocity = muzzleVelocity;
     this.arcHeight = arcHeight;
-    this.gravity = new THREE.Vector3(0, -14, 0);
+    this.gravity = gravity.clone?.() ?? gravity;
     this.projectileRange = projectileRange;
     this.projectileLifetime = projectileLifetime;
   }
@@ -38,7 +39,7 @@ export class MortarWeapon extends Weapon {
     const velocity = arcingDirection.multiplyScalar(this.muzzleVelocity);
     const projectile = new Projectile(projectileMesh, velocity, {
       lifetime: this.projectileLifetime,
-      acceleration: this.gravity,
+      acceleration: this.gravity?.clone?.() ?? this.gravity,
       maxDistance: this.projectileRange
     });
     projectile.damage = this.damage;

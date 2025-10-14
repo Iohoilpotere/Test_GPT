@@ -61,6 +61,7 @@ export class TankBattleGame {
     this.inputManager = InputManager.getInstance(window);
     this.projectiles = new Set();
     this.effects = new Set();
+    this.collisionScratch = new THREE.Vector3();
 
     this.arenaSize = 40;
     const arenaBuilder = new ArenaBuilder({ size: this.arenaSize });
@@ -165,6 +166,7 @@ export class TankBattleGame {
           this.cameraPivot.position.copy(this.playerTank.mesh.position);
           this.sceneManager.camera.lookAt(this.playerTank.mesh.position);
         }
+        this.#resolveTankCollision();
         this.projectiles.forEach((projectile) => {
           projectile.update(delta);
           if (!projectile.alive) {
@@ -229,6 +231,34 @@ export class TankBattleGame {
       maxHealth: this.playerTank.maxHealth,
       speed: this.playerTank.getCurrentSpeed()
     });
+  }
+
+  #resolveTankCollision() {
+    if (!this.playerTank || !this.enemyController?.isAlive()) {
+      return;
+    }
+    const enemyTank = this.enemyController.getTank?.();
+    if (!enemyTank) {
+      return;
+    }
+    const playerPosition = this.playerTank.mesh.position;
+    const enemyPosition = enemyTank.mesh.position;
+    this.collisionScratch.copy(playerPosition).sub(enemyPosition);
+    let distance = this.collisionScratch.length();
+    const minDistance = this.playerTank.getBoundingRadius() + enemyTank.getBoundingRadius();
+
+    if (distance === 0) {
+      this.collisionScratch.set(1, 0, 0);
+      distance = 0;
+    }
+
+    if (distance < minDistance) {
+      const penetration = minDistance - distance;
+      this.collisionScratch.normalize();
+      playerPosition.addScaledVector(this.collisionScratch, penetration);
+      this.playerTank.movementStrategy?.resolveCollision?.(this.collisionScratch);
+      this.playerTank.clampToArena();
+    }
   }
 
   #spawnExplosion(position, radius = 3) {

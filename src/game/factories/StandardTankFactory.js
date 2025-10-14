@@ -101,6 +101,17 @@ export class StandardTankFactory extends AbstractTankFactory {
     this.#applyWeaponStyleToTurret(tank.turretMesh, weaponPreset?.turretStyle);
     if (tank.turretController) {
       tank.turretController.barrelPivot = tank.turretMesh.userData?.barrelPivot ?? tank.turretMesh;
+      const min = tank.turretMesh.userData?.minElevation ?? tank.turretController.minElevation;
+      const max = tank.turretMesh.userData?.maxElevation ?? tank.turretController.maxElevation;
+      tank.turretController.minElevation = min;
+      tank.turretController.maxElevation = max;
+      if (tank.turretController.barrelPivot) {
+        tank.turretController.barrelPivot.rotation.x = THREE.MathUtils.clamp(
+          tank.turretController.barrelPivot.rotation.x,
+          min,
+          max
+        );
+      }
     }
     tank.recalculateBounds?.();
   }
@@ -114,6 +125,13 @@ export class StandardTankFactory extends AbstractTankFactory {
       ...baseStyle,
       ...weaponStyle
     };
+
+    if (typeof weaponStyle?.minElevation === 'number') {
+      turret.userData.minElevation = weaponStyle.minElevation;
+    }
+    if (typeof weaponStyle?.maxElevation === 'number') {
+      turret.userData.maxElevation = weaponStyle.maxElevation;
+    }
 
     if (turret.userData.barrelGroup) {
       barrelPivot.remove(turret.userData.barrelGroup);

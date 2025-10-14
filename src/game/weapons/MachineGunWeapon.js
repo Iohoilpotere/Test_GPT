@@ -5,17 +5,19 @@ import { Projectile } from '../projectiles/Projectile.js';
 export class MachineGunWeapon extends Weapon {
   constructor({
     cooldown = 0.1,
-    muzzleVelocity = 60,
+    muzzleVelocity = 24,
     burst = 1,
     damage = 12,
-    projectileRange = 18,
-    projectileLifetime = 0.7
+    projectileRange = 8,
+    projectileLifetime = 0.35,
+    projectileAcceleration = new THREE.Vector3(0, -28, 0)
   } = {}) {
     super({ cooldown, damage });
     this.muzzleVelocity = muzzleVelocity;
     this.burst = burst;
     this.projectileLifetime = projectileLifetime;
     this.projectileRange = projectileRange;
+    this.projectileAcceleration = projectileAcceleration.clone?.() ?? projectileAcceleration;
   }
 
   fire({ scene, origin, direction }) {
@@ -41,7 +43,11 @@ export class MachineGunWeapon extends Weapon {
       const projectile = new Projectile(
         projectileMesh,
         shotDirection.multiplyScalar(this.muzzleVelocity),
-        { lifetime: this.projectileLifetime, maxDistance: this.projectileRange }
+        {
+          lifetime: this.projectileLifetime,
+          maxDistance: this.projectileRange,
+          acceleration: this.projectileAcceleration?.clone?.() ?? this.projectileAcceleration
+        }
       );
       projectile.damage = this.damage;
       scene.add(projectile.mesh);

@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { CannonWeapon } from '../weapons/CannonWeapon.js';
 import { ExplosiveShotDecorator } from '../weapons/ExplosiveShotDecorator.js';
 import { MachineGunWeapon } from '../weapons/MachineGunWeapon.js';
@@ -12,10 +13,10 @@ export const WeaponPresets = {
       new ExplosiveShotDecorator(
         new CannonWeapon({
           cooldown: 0.55,
-          muzzleVelocity: 38,
+          muzzleVelocity: 18,
           damage: 65,
-          projectileRange: 22,
-          projectileLifetime: 0.85
+          projectileRange: 12,
+          projectileLifetime: 0.5
         }),
         {
           explosionRadius: 3.2
@@ -27,13 +28,15 @@ export const WeaponPresets = {
       accentColor: 0x264653,
       length: 3.2,
       radius: 0.18,
-      defaultElevation: 0.02
+      defaultElevation: THREE.MathUtils.degToRad(6),
+      minElevation: THREE.MathUtils.degToRad(0),
+      maxElevation: THREE.MathUtils.degToRad(32)
     },
     stats: {
       danno: 65,
       rateo: 1.8,
       raggio: 3.2,
-      velocitaProiettile: 38
+      velocitaProiettile: 18
     }
   },
   machineGun: {
@@ -43,11 +46,11 @@ export const WeaponPresets = {
     createWeapon: () =>
       new MachineGunWeapon({
         cooldown: 0.12,
-        muzzleVelocity: 55,
+        muzzleVelocity: 24,
         burst: 1,
         damage: 15,
-        projectileRange: 16,
-        projectileLifetime: 0.55
+        projectileRange: 8,
+        projectileLifetime: 0.35
       }),
     turretStyle: {
       shape: 'dual',
@@ -56,13 +59,15 @@ export const WeaponPresets = {
       length: 3.6,
       radius: 0.08,
       spacing: 0.32,
-      defaultElevation: 0
+      defaultElevation: 0,
+      minElevation: THREE.MathUtils.degToRad(-2),
+      maxElevation: THREE.MathUtils.degToRad(24)
     },
     stats: {
       danno: 15,
       rateo: 8,
       raggio: 0.5,
-      velocitaProiettile: 55
+      velocitaProiettile: 24
     }
   },
   mortar: {
@@ -73,11 +78,11 @@ export const WeaponPresets = {
       new ExplosiveShotDecorator(
         new MortarWeapon({
           cooldown: 1.4,
-          muzzleVelocity: 26,
+          muzzleVelocity: 16,
           arcHeight: 12,
           damage: 95,
-          projectileRange: 28,
-          projectileLifetime: 2.6
+          projectileRange: 18,
+          projectileLifetime: 2.2
         }),
         { explosionRadius: 5 }
       ),
@@ -87,13 +92,15 @@ export const WeaponPresets = {
       accentColor: 0xf2e9e4,
       length: 2.6,
       radius: 0.24,
-      defaultElevation: 0.4
+      defaultElevation: THREE.MathUtils.degToRad(165),
+      minElevation: THREE.MathUtils.degToRad(150),
+      maxElevation: THREE.MathUtils.degToRad(180)
     },
     stats: {
       danno: 95,
       rateo: 0.7,
       raggio: 5,
-      velocitaProiettile: 26
+      velocitaProiettile: 16
     }
   }
 };
