@@ -1,0 +1,8 @@
+[
+ {"file":"hero.jpg","url":"https://images.unsplash.com/photo-1764757630160-f280efe574b8?auto=format&fit=crop&w=1400&q=85&fm=jpg","type":"image/","author":"Fernando Santos","source":"https://unsplash.com/photos/7iu-qu2KHug"},
+ {"file":"family.jpg","url":"https://images.unsplash.com/photo-1748958754305-50945ac48be2?auto=format&fit=crop&w=1400&q=85&fm=jpg","type":"image/","author":"Caroline Badran","source":"https://unsplash.com/photos/bt09Cs3UthM"},
+ {"file":"swim.jpg","url":"https://images.unsplash.com/photo-1759963248344-8bf5f9c220fb?auto=format&fit=crop&w=1400&q=85&fm=jpg","type":"image/","author":"Max Im","source":"https://unsplash.com/photos/7zpTFZud7rg"},
+ {"file":"rest.jpg","url":"https://images.unsplash.com/photo-1752206493974-4d46980d6521?auto=format&fit=crop&w=1100&q=85&fm=jpg","type":"image/","author":"Yishen Ji","source":"https://unsplash.com/photos/FsxUYuRn9hI"},
+ {"file":"portrait.jpg","url":"https://images.unsplash.com/photo-1740302460851-0f4d4871ee3e?auto=format&fit=crop&w=1100&q=85&fm=jpg","type":"image/","author":"He Junhui","source":"https://unsplash.com/photos/Xaf3d9MJ1_s"},
+ {"file":"capybara-twins.webm","url":"https://upload.wikimedia.org/wikipedia/commons/b/b1/Baby_Capybara_Twins.webm","type":"video/","author":"Daniel Baumgartner","source":"https://commons.wikimedia.org/wiki/File:Baby_Capybara_Twins.webm"}
+]
