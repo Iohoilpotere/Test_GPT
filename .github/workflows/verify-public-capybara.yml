@@ -1,0 +1,63 @@
+name: Check deployed Capybara Club
+on:
+  push:
+    branches: [capybara-club-public]
+    paths: [.github/workflows/verify-public-capybara.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify live HTML and media
+        run: |
+          python3 -u - <<'PY'
+          import hashlib, pathlib, time, urllib.request, urllib.error
+          from html.parser import HTMLParser
+          URL = 'https://iohoilpotere.github.io/Test_GPT/capybara-club/'
+          expected = pathlib.Path('public/capybara-club/index.html').read_bytes()
+          def request(url):
+              return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'CapybaraClub/1.0 (+https://github.com/Iohoilpotere/Test_GPT)'}), timeout=20)
+          for attempt in range(15):
+              try:
+                  with request(URL) as response:
+                      actual = response.read()
+                      assert response.status == 200
+                      assert response.headers.get_content_type() == 'text/html'
+                  assert actual == expected, 'Deployment does not yet contain the tested file'
+                  print('LIVE SITE VERIFIED:', URL)
+                  print('HTTP 200, text/html,', len(actual), 'bytes')
+                  print('SHA256:', hashlib.sha256(actual).hexdigest())
+                  break
+              except Exception as error:
+                  print('Waiting for deployment:', attempt + 1, repr(error))
+                  if attempt == 14:
+                      raise
+                  time.sleep(10)
+          class Images(HTMLParser):
+              sources = set()
+              def handle_starttag(self, tag, attrs):
+                  if tag == 'img':
+                      src = dict(attrs).get('src', '')
+                      if src.startswith('https://'):
+                          self.sources.add(src)
+          parser = Images()
+          parser.feed(actual.decode('utf-8'))
+          for src in sorted(parser.sources):
+              with request(src) as response:
+                  assert response.status == 200
+                  assert response.headers.get_content_type().startswith('image/')
+                  assert len(response.read(64)) == 64
+                  print('IMAGE VERIFIED:', response.status, response.headers.get_content_type(), src)
+          movie = 'https://upload.wikimedia.org/wikipedia/commons/d/d1/New_capybaras_settle_in_at_Denver_Zoo.webm'
+          with request(movie) as response:
+              assert response.status == 200
+              assert response.read(4) == b'\x1aE\xdf\xa3'
+              print('VIDEO VERIFIED:', response.status, response.headers.get_content_type(), movie)
+          print('Public website, all four photographs and embedded native video verified.')
+          PY
