@@ -1,23 +1,17 @@
 <!doctype html>
 <html lang="it">
-  <head>
-    <meta charset="utf-8" />
-    <title>Tank Arena</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div id="control-hints">
-      <h1>Tank Arena</h1>
-      <div class="instructions">
-        <p><strong>Movimento:</strong> W / A / S / D</p>
-        <p><strong>Torretta:</strong> Frecce ← → per ruotare, ↑ ↓ per elevare</p>
-        <p><strong>Fuoco:</strong> Tieni premuto SPAZIO per l'autofire</p>
-        <p><strong>Obiettivo:</strong> Distruggi il carro bersaglio che respawna ogni 3 secondi dopo l'esplosione.</p>
-        <p><strong>Equipaggiamento:</strong> Usa il menu a destra per cambiare carro e arma in tempo reale.</p>
-      </div>
-    </div>
-    <canvas id="gameCanvas"></canvas>
-    <script type="module" src="./src/main.js"></script>
-  </body>
-</html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#21372d"><meta name="description" content="Capybara Club: un santuario digitale dedicato all'animale più zen del pianeta."><title>Capybara Club — Stay Chill</title><link rel="preconnect" href="https://upload.wikimedia.org"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header"><a class="brand" href="#top"><span>C</span> CAPYBARA CLUB</a><button class="menu" aria-label="Apri menu" aria-expanded="false">☰</button><nav><a href="#scopri">Scopri</a><a href="#storie">Storie</a><a href="#gallery">Gallery</a><a href="#video">Video</a></nav></header>
+<main id="top">
+<section class="hero"><div class="hero-copy"><p class="eyebrow">Hydrochoerus hydrochaeris · South America</p><h1>Stay chill.<br><em>Be capy.</em></h1><p class="lede">Il mammifero che ha trasformato la calma in uno stile di vita. Benvenuto nel club più rilassato di internet.</p><div class="actions"><a class="button" href="#scopri">Entra nel mood <b>↘</b></a><a href="#video">Guarda il video ▶</a></div></div><div class="hero-media"><img data-hero src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Capybara_portrait.jpg" alt="Primo piano di un capybara"><div class="shade"></div><div class="note">● &nbsp;100% social animal</div></div></section>
+<section class="section intro" id="scopri"><div class="heading reveal"><p class="eyebrow">Perché proprio loro?</p><h2>La filosofia capybara,<br>in tre semplici mosse.</h2></div><div class="features"><article class="card image-card reveal"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Baby_Capybara.jpg" alt="Giovane capybara" loading="lazy"><div class="overlay"><small>01</small><h3>Zero drama</h3><p>Un talento naturale nel condividere spazio, acqua e silenzio.</p></div></article><article class="card solid reveal"><small>02</small><div class="icon">◯</div><div><h3>Social energy</h3><p>Vivono in gruppi e trasformano la convivenza in una piccola arte quotidiana.</p></div></article><article class="card light reveal"><small>03</small><div class="icon">✦</div><div><h3>Water mode</h3><p>Nuotatori eccellenti, perfetti per una vita semi-acquatica.</p></div></article></div></section>
+<section class="story-wrap" id="storie"><div class="story-img reveal"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Capybara_(Photo).jpg" alt="Capybara su un prato" loading="lazy"></div><div class="story reveal"><p class="eyebrow">Meet the giant</p><h2>Il roditore più grande del mondo. E forse il più tranquillo.</h2><p>I capybara sono parenti giganti dei porcellini d'India. Il loro corpo massiccio, le zampe adattate all'acqua e il carattere sociale li rendono perfetti per la vita tra rive, prati e lagune.</p><p>La loro superpotenza è l'equilibrio: stare bene con il gruppo, trovare acqua quando serve e non sprecare energie inutilmente.</p><a href="#gallery" class="link">Esplora la gallery →</a></div></section>
+<section class="stats"><div class="stat reveal"><span><b data-count="65">0</b><sup>kg</sup></span><small>peso massimo indicativo</small></div><div class="stat reveal"><span><b data-count="35">0</b><sup>km/h</sup></span><small>velocità sulla terra</small></div><div class="stat reveal"><span><b data-count="5">0</b><sup>min</sup></span><small>sott'acqua</small></div><div class="stat reveal"><span><b data-count="20">0</b><sup>+</sup></span><small>membri nei gruppi grandi</small></div></section>
+<section class="section gallery" id="gallery"><div class="gallery-head reveal"><div><p class="eyebrow">Capy moments</p><h2>Una gallery ad alto tasso di serenità.</h2></div><p>Acqua, sole, erba, amici. Il manifesto visuale della vita capybara.</p></div><div class="grid"><figure class="pic tall reveal"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Gfp-capybara.jpg" alt="Capybara in primo piano" loading="lazy"><figcaption>Portrait mode</figcaption></figure><figure class="pic reveal"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Capibaras.jpg" alt="Gruppo di capybara" loading="lazy"><figcaption>Better together</figcaption></figure><figure class="pic reveal"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Capybara.jpg" alt="Capybara vicino all'acqua" loading="lazy"><figcaption>River state of mind</figcaption></figure><figure class="pic wide reveal"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Capybara_(25789958658).jpg" alt="Capybara in natura" loading="lazy"><figcaption>Slow afternoon</figcaption></figure></div></section>
+<section class="video" id="video"><div class="reveal"><p class="eyebrow">Press play, breathe out</p><h2>15 secondi di capybara.<br>Il resto può aspettare.</h2></div><div class="frame reveal"><iframe src="https://www.youtube.com/embed/hoXyIlPrgQg?rel=0" title="Relaxing capybara footage" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></section>
+<section class="final"><div class="reveal"><p class="eyebrow">End on a calm note</p><h2>Più capybara.<br>Meno caos.</h2><a class="button white" href="#top">Torna su ↑</a></div></section>
+</main><footer><span>CAPYBARA CLUB © 2026</span><span>Made with low stress & high chill.</span></footer><script type="module" src="./src/main.js"></script>
+</body></html>
