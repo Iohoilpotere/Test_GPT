@@ -1,0 +1,65 @@
+name: Verify public Capybara Club
+on:
+  push:
+    branches: [work]
+    paths:
+      - capybara/**
+      - .github/workflows/verify-capybara.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify the public website and media
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib, time, urllib.request
+          from html.parser import HTMLParser
+          url = 'https://rawcdn.githack.com/Iohoilpotere/Test_GPT/6b08b669f5bf60ec9be864b27cdb98fe989112bf/capybara/index.html'
+          expected = pathlib.Path('capybara/index.html').read_bytes()
+          for attempt in range(4):
+              try:
+                  with urllib.request.urlopen(url, timeout=30) as response:
+                      status = response.status
+                      content_type = response.headers.get_content_type()
+                      actual = response.read()
+                  assert status == 200, status
+                  assert content_type == 'text/html', content_type
+                  assert actual == expected, 'Hosted content differs from the committed HTML'
+                  print('PUBLIC WEBSITE VERIFIED:', url)
+                  print('HTTP:', status, 'Content-Type:', content_type, 'Bytes:', len(actual))
+                  print('SHA256:', hashlib.sha256(actual).hexdigest())
+                  break
+              except Exception as error:
+                  print('Attempt', attempt + 1, repr(error))
+                  if attempt == 3:
+                      raise
+                  time.sleep(8)
+          class Images(HTMLParser):
+              sources = set()
+              def handle_starttag(self, tag, attrs):
+                  if tag == 'img':
+                      src = dict(attrs).get('src', '')
+                      if src.startswith('https://'):
+                          self.sources.add(src)
+          parser = Images()
+          parser.feed(actual.decode('utf-8'))
+          for src in sorted(parser.sources):
+              with urllib.request.urlopen(src, timeout=30) as response:
+                  assert response.status == 200
+                  assert response.headers.get_content_type().startswith('image/')
+                  assert len(response.read(64)) == 64
+                  print('IMAGE VERIFIED:', response.status, response.headers.get_content_type(), src)
+          movie = 'https://upload.wikimedia.org/wikipedia/commons/d/d1/New_capybaras_settle_in_at_Denver_Zoo.webm'
+          with urllib.request.urlopen(movie, timeout=30) as response:
+              assert response.status == 200
+              assert response.read(4) == b'\x1aE\xdf\xa3', 'Invalid WebM header'
+              print('VIDEO VERIFIED:', response.status, response.headers.get_content_type(), movie)
+          print('All public delivery checks passed.')
+          PY
