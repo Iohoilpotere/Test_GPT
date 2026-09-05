@@ -1,0 +1,133 @@
+name: Verify Capy Club website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/capybara/**'
+      - '.github/workflows/capybara-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capybara-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browser test tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/capy-check"
+          cd "$RUNNER_TEMP/capy-check"
+          npm init -y
+          npm install --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+      - name: Check live website and interactions
+        env:
+          CAPY_SCREENSHOTS: ${{ github.workspace }}/capybara-test-results
+        run: |
+          cd "$RUNNER_TEMP/capy-check"
+          cat > check.cjs <<'JS'
+          const { chromium } = require('playwright');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const url = 'https://iohoilpotere.github.io/Test_GPT/capybara/';
+          const output = process.env.CAPY_SCREENSHOTS;
+          fs.mkdirSync(output, {recursive:true});
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            let live = false;
+            for(let i=0;i<45;i++){
+              try{
+                const res = await fetch(url, {signal:AbortSignal.timeout(15000)});
+                const html = await res.text();
+                if(res.ok && html.includes('Capy Club') && html.includes('script.js')) { live=true; break; }
+                console.log('Waiting for Pages:', res.status);
+              }catch(e){console.log('Waiting for Pages:',e.message);}
+              await sleep(4000);
+            }
+            assert(live,'The published website must return HTTP 200 and the Capy Club page.');
+            for(const asset of ['style.css','script.js']){
+              const r=await fetch(url+asset);
+              assert(r.ok,asset+' must be publicly available');
+              console.log('HTTP',r.status,url+asset);
+            }
+            console.log('LIVE_URL_VERIFIED',url);
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1440,height:1000}});
+            const errors=[];
+            const failures=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            page.on('requestfailed',r=>console.log('REQUEST_FAILED',r.url(),r.failure()?.errorText));
+            try{
+              const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
+              assert.equal(response.status(),200);
+              await page.waitForFunction(()=>document.querySelector('#pause-dots').children.length===6);
+              await page.evaluate(()=>document.querySelectorAll('img[src]').forEach(img=>img.loading='eager'));
+              try{
+                await page.waitForFunction(()=>[...document.querySelectorAll('img[src]')].every(img=>img.complete&&img.naturalWidth>0),null,{timeout:45000});
+              }catch(e){failures.push('One or more photographs did not load');}
+              console.log('PHOTO_RESULTS',JSON.stringify(await page.locator('img[src]').evaluateAll(images=>images.map(i=>({src:i.src,loaded:i.complete&&i.naturalWidth>0,width:i.naturalWidth})))));
+              await page.evaluate(()=>{document.querySelectorAll('.reveal').forEach(e=>e.classList.add('visible'));document.documentElement.classList.add('no-motion');});
+              await page.screenshot({path:output+'/desktop.png',fullPage:true});
+              for(const width of [1440,1024,768,535,390,320]){
+                await page.setViewportSize({width,height:900});
+                assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow at '+width);
+                console.log('RESPONSIVE_PASS',width);
+              }
+              await page.setViewportSize({width:390,height:844});
+              await page.screenshot({path:output+'/mobile.png',fullPage:true});
+              await page.locator('.menu-button').click();
+              assert(await page.locator('#main-nav').isVisible());
+              await page.locator('#main-nav a').first().click();
+              assert(!(await page.locator('#main-nav').isVisible()));
+              await page.locator('[data-filter="acqua"]').click();
+              assert.equal(await page.locator('.gallery-card:visible').count(),1);
+              await page.locator('[data-filter="tutti"]').click();
+              assert.equal(await page.locator('.gallery-card:visible').count(),4);
+              await page.locator('.gallery-card').first().click();
+              assert(await page.locator('#lightbox').isVisible());
+              const caption=await page.locator('#lightbox-caption').textContent();
+              await page.locator('#photo-next').click();
+              assert.notEqual(await page.locator('#lightbox-caption').textContent(),caption);
+              await page.keyboard.press('Escape');
+              assert(!(await page.locator('#lightbox').isVisible()));
+              await page.locator('#start-pause').click();
+              assert.equal(await page.locator('#start-pause').getAttribute('aria-pressed'),'true');
+              await page.locator('#start-pause').click();
+              assert.equal(await page.locator('#start-pause').getAttribute('aria-pressed'),'false');
+              await page.locator('.faq-list summary').first().click();
+              assert.notEqual(await page.locator('.faq-list details').first().getAttribute('open'),null);
+              await page.locator('#open-credits').click();
+              assert.notEqual(await page.locator('#crediti').getAttribute('open'),null);
+              await page.locator('#capy-video').evaluate(v=>v.muted=true);
+              await page.locator('#play-video').click();
+              try{
+                await page.waitForFunction(()=>document.querySelector('#capy-video').currentTime>1,null,{timeout:60000});
+                console.log('VIDEO_PLAYBACK_VERIFIED',JSON.stringify(await page.locator('#capy-video').evaluate(v=>({duration:v.duration,currentTime:v.currentTime,readyState:v.readyState,videoWidth:v.videoWidth}))));
+              }catch(e){failures.push('Video playback did not start');console.log('VIDEO_ERROR',await page.locator('#capy-video').evaluate(v=>({error:v.error?.message,currentSrc:v.currentSrc,readyState:v.readyState})));}
+              await page.locator('#capy-video').evaluate(v=>v.pause());
+              await page.locator('#cinema').screenshot({path:output+'/video.png'});
+              assert.equal(errors.length,0,'JavaScript errors: '+errors.join('; '));
+              assert.equal(failures.length,0,failures.join('; '));
+              console.log('ALL_CHECKS_PASSED: public HTTP 200, photographs, video playback, responsive layouts, menu, gallery, lightbox, pause and FAQ.');
+            }finally{await browser.close();}
+          })().catch(e=>{console.error(e);process.exit(1);});
+          JS
+          node check.cjs
+      - name: Save browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capybara-browser-verification
+          path: capybara-test-results
+          retention-days: 7
