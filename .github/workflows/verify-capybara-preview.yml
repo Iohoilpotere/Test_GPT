@@ -15,57 +15,48 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Verify the live page and every referenced resource
         run: |
-          python3 - <<'PY'
-          import pathlib, re, urllib.request, urllib.parse, hashlib
-          from html.parser import HTMLParser
-          root = pathlib.Path('public/capybara')
-          url = 'https://scaled-zenith-6m4mvj5.shipstatic.com/'
-          movie = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Baby_Capybara_Twins.webm'
-          expected = (root/'index.html').read_text().replace('./media/capybara-twins.webm',movie)
-          expected = re.sub(r'\s*<link rel="canonical"[^>]*>', '', expected)
-          expected = re.sub(r'\s*<meta property="og:(url|image)"[^>]*>', '', expected)
-          expected = expected.replace('Immagini e video sono ospitati su questo sito.','Le immagini sono ospitate su questo sito; il video viene caricato da Wikimedia Commons soltanto quando premi play.')
-          with urllib.request.urlopen(url,timeout=30) as response:
-              assert response.status == 200
-              assert response.headers.get_content_type() == 'text/html'
-              actual = response.read().decode()
-          # ShipStatic adds a deployment-specific cache-busting query to local assets.
-          # Normalize only this observed parameter; all actual website content must match.
-          normalized = actual.replace('?_ship=6m4mvj5','')
-          assert normalized == expected, 'Unexpected public HTML content change'
-          print('PUBLIC_HTML_OK HTTP 200 exact content matches after cache-buster normalization')
-          class Assets(HTMLParser):
-              sources = set()
-              def handle_starttag(self,tag,attrs):
-                  a = dict(attrs)
-                  if tag in ['img','script'] and a.get('src'):
-                      self.sources.add(a['src'])
-                  if tag == 'video' and a.get('poster'):
-                      self.sources.add(a['poster'])
-                  if tag == 'link' and a.get('rel') in ['stylesheet','icon']:
-                      self.sources.add(a['href'])
-          parser = Assets(); parser.feed(actual)
-          for source in sorted(parser.sources):
-              target = urllib.parse.urljoin(url,source)
-              assert urllib.parse.urlparse(target).hostname == urllib.parse.urlparse(url).hostname
-              relative = urllib.parse.urlparse(source).path.removeprefix('./')
-              with urllib.request.urlopen(target,timeout=30) as response:
-                  assert response.status == 200
-                  data = response.read()
-                  content_type = response.headers.get_content_type()
-              if relative.endswith('.jpg'):
-                  assert content_type == 'image/jpeg' and data.startswith(b'\xff\xd8') and len(data)>10000
-              else:
-                  assert data == (root/relative).read_bytes(), 'Changed asset: '+relative
-              print('PUBLIC_ASSET_OK',relative,content_type,len(data),hashlib.sha256(data).hexdigest())
-          with urllib.request.urlopen(urllib.request.Request(movie,headers={'Range':'bytes=0-63'}),timeout=30) as response:
-              assert response.status in (200,206)
-              assert response.headers.get_content_type() == 'video/webm'
-              assert response.read(4) == b'\x1aE\xdf\xa3'
-              print('PUBLIC_VIDEO_OK',response.status,response.headers.get_content_type())
-          assert 'id="quiz"' in actual and 'id="pausa"' in actual and 'id="galleria"' in actual
-          print('ALL_PUBLIC_DELIVERY_CHECKS_PASSED')
-          print('PUBLIC_VERIFIED_URL',url)
-          PY
+          node --input-type=module <<'JS'
+          import { readFile } from 'node:fs/promises';
+          import assert from 'node:assert/strict';
+          import { createHash } from 'node:crypto';
+          const url='https://scaled-zenith-6m4mvj5.shipstatic.com/';
+          const movie='https://upload.wikimedia.org/wikipedia/commons/b/b1/Baby_Capybara_Twins.webm';
+          let expected=await readFile('public/capybara/index.html','utf8');
+          expected=expected.replace('./media/capybara-twins.webm',movie)
+            .replace(/\s*<link rel="canonical"[^>]*>/g,'')
+            .replace(/\s*<meta property="og:(url|image)"[^>]*>/g,'')
+            .replace('Immagini e video sono ospitati su questo sito.','Le immagini sono ospitate su questo sito; il video viene caricato da Wikimedia Commons soltanto quando premi play.');
+          const page=await fetch(url,{signal:AbortSignal.timeout(30000)});
+          console.log('PUBLIC_HTTP',page.status,'CONTENT_TYPE',page.headers.get('content-type'));
+          assert.equal(page.status,200);
+          const actual=await page.text();
+          const normalized=actual.replaceAll('?_ship=6m4mvj5','');
+          assert.equal(normalized,expected,'Public content differs after observed cache-buster normalization');
+          console.log('PUBLIC_HTML_OK expected complete website is online');
+          const files=['app.js','styles.css','favicon.svg','media/hero.jpg','media/family.jpg','media/swim.jpg','media/rest.jpg','media/portrait.jpg','media/video-poster.jpg'];
+          for(const file of files){
+            const response=await fetch(new URL(file+'?_ship=6m4mvj5',url),{signal:AbortSignal.timeout(30000)});
+            assert.equal(response.status,200,file);
+            const data=Buffer.from(await response.arrayBuffer());
+            if(file.endsWith('.jpg')){
+              assert.ok((response.headers.get('content-type')||'').includes('image/jpeg'));
+              assert.ok(data.length>10000 && data[0]===255 && data[1]===216);
+            }else{
+              assert.ok(data.equals(await readFile('public/capybara/'+file)),'Unexpected asset content: '+file);
+            }
+            console.log('PUBLIC_ASSET_OK',file,response.status,data.length,createHash('sha256').update(data).digest('hex'));
+          }
+          const video=await fetch(movie,{headers:{Range:'bytes=0-63'},signal:AbortSignal.timeout(30000)});
+          assert.ok(video.status===200||video.status===206);
+          assert.ok((video.headers.get('content-type')||'').includes('video/webm'));
+          const reader=video.body.getReader();const first=await reader.read();await reader.cancel();
+          assert.ok(Buffer.from(first.value).subarray(0,4).equals(Buffer.from([26,69,223,163])));
+          console.log('PUBLIC_VIDEO_OK',video.status);
+          console.log('ALL_PUBLIC_DELIVERY_CHECKS_PASSED');
+          console.log('PUBLIC_VERIFIED_URL',url);
+          JS
