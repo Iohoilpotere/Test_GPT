@@ -1,0 +1,31 @@
+name: Publish verified Capybara preview
+on:
+  push:
+    branches: [work]
+    paths:
+      - .github/workflows/publish-capybara-preview.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read the work branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Assemble the independent static website
+        run: |
+          mkdir -p dist/capybara
+          cp -R public/capybara/. dist/capybara/
+          node scripts/build-capybara.mjs
+      - name: Validate upload limits and privacy
+        run: node scripts/publish-capybara-preview.mjs --dry-run
+      - name: Publish and verify every public file
+        run: node scripts/publish-capybara-preview.mjs
