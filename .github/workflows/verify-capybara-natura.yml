@@ -59,15 +59,21 @@ jobs:
                   assert response.status == 200
                   page.wait_for_selector('.js')
                   page.locator('img[src]').evaluate_all('(images) => images.forEach(img => img.loading = "eager")')
-                  try:
-                      page.wait_for_function('[...document.querySelectorAll("img[src]")].every(i => i.complete && i.naturalWidth > 0)', timeout=45000)
-                  except Exception:
-                      pass
-                  images = page.locator('img[src]').evaluate_all('(imgs) => imgs.map(i => ({src:i.currentSrc,loaded:i.complete && i.naturalWidth>0}))')
+                  page.wait_for_function('[...document.querySelectorAll("img[src]")].every(i => i.complete && i.naturalWidth > 0)', timeout=45000)
+                  page.evaluate('() => Promise.all([...document.querySelectorAll("img[src]")].map(img => img.decode()))')
+                  page.evaluate('() => document.fonts.ready')
+                  for image in page.locator('img[src]').all():
+                      image.scroll_into_view_if_needed()
+                      page.wait_for_timeout(150)
+                  page.locator('#galleria').screenshot(path=f'verification/gallery-{width}.png')
+                  page.locator('#habitat').screenshot(path=f'verification/habitat-{width}.png')
+                  page.evaluate('window.scrollTo(0,0)')
+                  page.wait_for_timeout(300)
+                  images = page.locator('img[src]').evaluate_all('(imgs) => imgs.map(i => ({src:i.currentSrc,loaded:i.complete && i.naturalWidth>0, width:i.naturalWidth,opacity:getComputedStyle(i).opacity}))')
                   overflow = page.evaluate('document.documentElement.scrollWidth > innerWidth')
                   assert not overflow
                   assert not errors, errors
-                  page.screenshot(path=f'verification/desktop.png' if width == 1440 else 'verification/mobile.png', full_page=True)
+                  page.screenshot(path='verification/desktop.png' if width == 1440 else 'verification/mobile.png', full_page=True)
                   page.locator('[data-filter="water"]').click()
                   assert page.locator('.gallery-item:visible').count() == 3
                   page.locator('.gallery-item:visible').first.click()
