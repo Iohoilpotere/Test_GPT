@@ -1,0 +1,88 @@
+name: Verify Capybara Natura public site
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/capybara-natura/**'
+      - '.github/workflows/verify-capybara-natura.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-public-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify public HTTP responses and exact source contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://iohoilpotere.github.io/Test_GPT/capybara-natura'
+          mkdir -p verification
+          for FILE in index.html styles.css app.js; do
+            EXPECTED=$(git hash-object "public/capybara-natura/$FILE")
+            OK=0
+            for ATTEMPT in $(seq 1 18); do
+              if curl --fail --silent --show-error --max-time 25 "$BASE/$FILE?verify=$GITHUB_SHA" -o "verification/$FILE"; then
+                ACTUAL=$(git hash-object "verification/$FILE")
+                if [ "$ACTUAL" = "$EXPECTED" ]; then OK=1; break; fi
+              fi
+              sleep 5
+            done
+            test "$OK" = 1
+            echo "HTTP 200 and exact source verified: $BASE/$FILE ($EXPECTED)"
+          done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser test tools
+        run: |
+          python -m pip install --quiet playwright
+          python -m playwright install --with-deps chromium
+      - name: Capture actual public desktop and mobile page
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          report = {'url': 'https://iohoilpotere.github.io/Test_GPT/capybara-natura/', 'viewports': [], 'external_video_playback': 'not verified'}
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              for width, height in [(1440, 1000), (375, 812)]:
+                  context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion='reduce')
+                  page = context.new_page()
+                  errors = []
+                  page.on('pageerror', lambda error: errors.append(str(error)))
+                  response = page.goto(report['url'], wait_until='domcontentloaded', timeout=60000)
+                  assert response.status == 200
+                  page.wait_for_selector('.js')
+                  page.locator('img[src]').evaluate_all('(images) => images.forEach(img => img.loading = "eager")')
+                  try:
+                      page.wait_for_function('[...document.querySelectorAll("img[src]")].every(i => i.complete && i.naturalWidth > 0)', timeout=45000)
+                  except Exception:
+                      pass
+                  images = page.locator('img[src]').evaluate_all('(imgs) => imgs.map(i => ({src:i.currentSrc,loaded:i.complete && i.naturalWidth>0}))')
+                  overflow = page.evaluate('document.documentElement.scrollWidth > innerWidth')
+                  assert not overflow
+                  assert not errors, errors
+                  page.screenshot(path=f'verification/desktop.png' if width == 1440 else 'verification/mobile.png', full_page=True)
+                  page.locator('[data-filter="water"]').click()
+                  assert page.locator('.gallery-item:visible').count() == 3
+                  page.locator('.gallery-item:visible').first.click()
+                  assert page.locator('#lightbox').is_visible()
+                  page.keyboard.press('Escape')
+                  report['viewports'].append({'width': width, 'http_status': response.status, 'horizontal_overflow': overflow, 'javascript_errors': errors, 'images': images})
+                  context.close()
+              browser.close()
+          Path('verification/report.json').write_text(json.dumps(report, indent=2))
+          print(json.dumps(report, indent=2))
+          PY
+      - name: Save verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capybara-natura-verification
+          path: verification/
+          retention-days: 7
