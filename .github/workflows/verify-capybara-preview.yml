@@ -1,0 +1,71 @@
+name: Verify deployed Capybara preview
+on:
+  push:
+    branches: [work]
+    paths:
+      - .github/workflows/verify-capybara-preview.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify the live page and every referenced resource
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, urllib.request, urllib.parse, hashlib
+          from html.parser import HTMLParser
+          root = pathlib.Path('public/capybara')
+          url = 'https://scaled-zenith-6m4mvj5.shipstatic.com/'
+          movie = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Baby_Capybara_Twins.webm'
+          expected = (root/'index.html').read_text().replace('./media/capybara-twins.webm',movie)
+          expected = re.sub(r'\s*<link rel="canonical"[^>]*>', '', expected)
+          expected = re.sub(r'\s*<meta property="og:(url|image)"[^>]*>', '', expected)
+          expected = expected.replace('Immagini e video sono ospitati su questo sito.','Le immagini sono ospitate su questo sito; il video viene caricato da Wikimedia Commons soltanto quando premi play.')
+          with urllib.request.urlopen(url,timeout=30) as response:
+              assert response.status == 200
+              assert response.headers.get_content_type() == 'text/html'
+              actual = response.read().decode()
+          # ShipStatic adds a deployment-specific cache-busting query to local assets.
+          # Normalize only this observed parameter; all actual website content must match.
+          normalized = actual.replace('?_ship=6m4mvj5','')
+          assert normalized == expected, 'Unexpected public HTML content change'
+          print('PUBLIC_HTML_OK HTTP 200 exact content matches after cache-buster normalization')
+          class Assets(HTMLParser):
+              sources = set()
+              def handle_starttag(self,tag,attrs):
+                  a = dict(attrs)
+                  if tag in ['img','script'] and a.get('src'):
+                      self.sources.add(a['src'])
+                  if tag == 'video' and a.get('poster'):
+                      self.sources.add(a['poster'])
+                  if tag == 'link' and a.get('rel') in ['stylesheet','icon']:
+                      self.sources.add(a['href'])
+          parser = Assets(); parser.feed(actual)
+          for source in sorted(parser.sources):
+              target = urllib.parse.urljoin(url,source)
+              assert urllib.parse.urlparse(target).hostname == urllib.parse.urlparse(url).hostname
+              relative = urllib.parse.urlparse(source).path.removeprefix('./')
+              with urllib.request.urlopen(target,timeout=30) as response:
+                  assert response.status == 200
+                  data = response.read()
+                  content_type = response.headers.get_content_type()
+              if relative.endswith('.jpg'):
+                  assert content_type == 'image/jpeg' and data.startswith(b'\xff\xd8') and len(data)>10000
+              else:
+                  assert data == (root/relative).read_bytes(), 'Changed asset: '+relative
+              print('PUBLIC_ASSET_OK',relative,content_type,len(data),hashlib.sha256(data).hexdigest())
+          with urllib.request.urlopen(urllib.request.Request(movie,headers={'Range':'bytes=0-63'}),timeout=30) as response:
+              assert response.status in (200,206)
+              assert response.headers.get_content_type() == 'video/webm'
+              assert response.read(4) == b'\x1aE\xdf\xa3'
+              print('PUBLIC_VIDEO_OK',response.status,response.headers.get_content_type())
+          assert 'id="quiz"' in actual and 'id="pausa"' in actual and 'id="galleria"' in actual
+          print('ALL_PUBLIC_DELIVERY_CHECKS_PASSED')
+          print('PUBLIC_VERIFIED_URL',url)
+          PY
