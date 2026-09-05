@@ -1,10 +1,8 @@
-import { TankBattleGame } from './game/TankBattleGame.js';
-import { InputManager } from './core/input/InputManager.js';
-
-const canvas = document.getElementById('gameCanvas');
-const game = new TankBattleGame(canvas);
-
-// Boot InputManager to ensure event listeners are active.
-InputManager.getInstance(window);
-
-game.start();
+const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const items=document.querySelectorAll('.reveal');
+if(reducedMotion){items.forEach(x=>x.classList.add('show'));}else{const observer=new IntersectionObserver((entries,o)=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');o.unobserve(e.target);}}),{threshold:.14});items.forEach(x=>observer.observe(x));}
+const counters=document.querySelectorAll('[data-count]');
+const animateCounter=el=>{const target=Number(el.dataset.count||0);if(reducedMotion){el.textContent=target;return;}const start=performance.now();const tick=now=>{const p=Math.min((now-start)/1200,1);el.textContent=Math.round(target*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick);};requestAnimationFrame(tick);};
+const counterObserver=new IntersectionObserver((entries,o)=>entries.forEach(e=>{if(e.isIntersecting){animateCounter(e.target);o.unobserve(e.target);}}),{threshold:.6});counters.forEach(x=>counterObserver.observe(x));
+const hero=document.querySelector('[data-hero]');if(hero&&!reducedMotion)window.addEventListener('scroll',()=>{hero.style.transform=`translateY(${Math.min(scrollY*.055,42)}px) scale(1.02)`},{passive:true});
+const header=document.querySelector('.site-header'),menu=document.querySelector('.menu');if(menu){menu.addEventListener('click',()=>{const open=header.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));});document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',()=>header.classList.remove('open')));}
